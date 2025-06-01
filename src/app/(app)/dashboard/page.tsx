@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -41,7 +41,16 @@ export default function DashboardPage() {
       setIsLoadingData(true);
       const storedMedicationsString = localStorage.getItem('pillPalMedications');
       if (storedMedicationsString) {
-        setMedications(JSON.parse(storedMedicationsString));
+        try {
+          setMedications(JSON.parse(storedMedicationsString));
+        } catch (e) {
+          console.error("Error parsing medications from localStorage", e);
+          setMedications(defaultInitialMedications);
+          localStorage.setItem('pillPalMedications', JSON.stringify(defaultInitialMedications.map(m => {
+            const { icon, ...rest } = m;
+            return rest;
+          })));
+        }
       } else {
         setMedications(defaultInitialMedications);
         localStorage.setItem('pillPalMedications', JSON.stringify(defaultInitialMedications.map(m => {
@@ -52,7 +61,13 @@ export default function DashboardPage() {
 
       const storedUserStatsString = localStorage.getItem('pillPalUserStats');
       if (storedUserStatsString) {
-        setUserStats(JSON.parse(storedUserStatsString));
+        try {
+          setUserStats(JSON.parse(storedUserStatsString));
+        } catch (e) {
+          console.error("Error parsing user stats from localStorage", e);
+          setUserStats(defaultInitialUserStats);
+          localStorage.setItem('pillPalUserStats', JSON.stringify(defaultInitialUserStats));
+        }
       } else {
         setUserStats(defaultInitialUserStats);
         localStorage.setItem('pillPalUserStats', JSON.stringify(defaultInitialUserStats));
@@ -83,7 +98,7 @@ export default function DashboardPage() {
       const hours = String(now.getHours()).padStart(2, '0');
       const minutes = String(now.getMinutes()).padStart(2, '0');
       setCurrentTime(`${hours}:${minutes}`);
-    }, 1000); // Update every second for more precise check, though notifications check per minute
+    }, 1000);
     return () => clearInterval(timer);
   }, []);
 
@@ -133,7 +148,7 @@ export default function DashboardPage() {
     }));
   };
 
-  const showBrowserNotification = async (med: UpcomingMedication) => {
+  const showBrowserNotification = useCallback(async (med: UpcomingMedication) => {
     if (!('Notification' in window)) {
       console.log("This browser does not support desktop notification");
       return;
@@ -152,19 +167,28 @@ export default function DashboardPage() {
         });
       }
     }
-  };
+  }, []); // Empty dependency array, this function is stable
 
   useEffect(() => {
     if (!isClient || isLoadingData || !currentTime) return;
 
-    const remindersEnabledString = localStorage.getItem(LOCAL_STORAGE_MED_REMINDERS_KEY);
-    const remindersEnabled = remindersEnabledString ? JSON.parse(remindersEnabledString) : false;
+    let remindersEnabled = false;
+    try {
+      const remindersEnabledString = localStorage.getItem(LOCAL_STORAGE_MED_REMINDERS_KEY);
+      if (remindersEnabledString) {
+          remindersEnabled = JSON.parse(remindersEnabledString);
+      }
+    } catch (error) {
+        console.error("Error parsing remindersEnabled from localStorage:", error);
+        remindersEnabled = true; // Default to true if parsing fails or not set, can be changed
+    }
 
     if (!remindersEnabled) return;
 
     upcomingMedications.forEach(med => {
       if (med.scheduledTime === currentTime) {
-        const notificationKey = `${med.id}-${med.scheduledTime}-${new Date().toISOString().split('T')[0]}`;
+        const todayDateString = new Date().toISOString().split('T')[0];
+        const notificationKey = `${med.id}-${med.scheduledTime}-${todayDateString}`;
         if (!shownNotificationKeys.includes(notificationKey)) {
           showBrowserNotification(med);
           setShownNotificationKeys(prevKeys => [...prevKeys, notificationKey]);
@@ -172,7 +196,7 @@ export default function DashboardPage() {
       }
     });
 
-  }, [currentTime, upcomingMedications, isClient, isLoadingData, shownNotificationKeys]);
+  }, [currentTime, upcomingMedications, isClient, isLoadingData, shownNotificationKeys, showBrowserNotification]);
 
 
   if (isLoadingData && isClient) {
@@ -317,3 +341,4 @@ function StatCard({ icon: Icon, title, value, color }: StatCardProps) {
     </div>
   );
 }
+
