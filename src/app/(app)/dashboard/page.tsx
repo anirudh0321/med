@@ -13,10 +13,11 @@ import Image from 'next/image';
 const defaultInitialMedications: Medication[] = [];
 
 const defaultInitialUserStats: UserStats = {
-  points: 1250,
-  currentStreak: 15,
-  longestStreak: 28,
-  overallAdherence: 88,
+  points: 0,
+  currentStreak: 0,
+  longestStreak: 0,
+  overallAdherence: 0, // This should ideally be calculated based on adherence logs
+  lastStreakIncrementDate: undefined,
 };
 
 type UpcomingMedication = Medication & { scheduledTime: string };
@@ -24,6 +25,31 @@ type UpcomingMedication = Medication & { scheduledTime: string };
 const LOCAL_STORAGE_MED_REMINDERS_KEY = 'pillPalMedicationRemindersEnabled';
 const LOCAL_STORAGE_IN_APP_NOTIFICATIONS_KEY = 'pillPalInAppNotifications';
 const MAX_IN_APP_NOTIFICATIONS = 10;
+
+// Helper function to check if the current date is consecutive to the last recorded streak date
+const isConsecutiveDay = (lastDateStr: string | undefined, currentDateStr: string): boolean => {
+  if (!lastDateStr) {
+    // If there's no last date, it's the start of a new streak (of 1 day), so not "consecutive" in terms of extending an old streak.
+    return false; 
+  }
+  try {
+    const lastDate = new Date(lastDateStr);
+    // Setting hours to 0 for both dates ensures we compare just the date part, local timezone.
+    lastDate.setHours(0, 0, 0, 0);
+
+    const expectedContinuationDate = new Date(lastDate);
+    expectedContinuationDate.setDate(lastDate.getDate() + 1);
+
+    const currentDate = new Date(currentDateStr);
+    currentDate.setHours(0, 0, 0, 0);
+    
+    return expectedContinuationDate.getTime() === currentDate.getTime();
+  } catch (e) {
+    console.error("Error in isConsecutiveDay parsing dates:", e);
+    // If dates are invalid, treat as not consecutive to be safe.
+    return false; 
+  }
+};
 
 
 export default function DashboardPage() {
@@ -65,7 +91,12 @@ export default function DashboardPage() {
       const storedUserStatsString = localStorage.getItem('pillPalUserStats');
       if (storedUserStatsString) {
         try {
-          setUserStats(JSON.parse(storedUserStatsString));
+          const parsedStats = JSON.parse(storedUserStatsString);
+          // Ensure new fields have default values if loading older data
+          setUserStats({
+            ...defaultInitialUserStats, // provides defaults for new fields
+            ...parsedStats // overrides with stored values
+          });
         } catch (e) {
           console.error("Error parsing user stats from localStorage", e);
           setUserStats(defaultInitialUserStats);
@@ -143,12 +174,42 @@ export default function DashboardPage() {
         med.id === medId ? { ...med, adherence: [...med.adherence, {date: new Date().toISOString().split('T')[0], time, taken: true}], icon: CheckCircle } : med
       )
     );
-    setUserStats(prevStats => ({
-      ...prevStats,
-      points: prevStats.points + 10,
-      currentStreak: prevStats.currentStreak + 1, // This should be more complex based on adherence history
-      overallAdherence: Math.min(100, prevStats.overallAdherence + 2) // This should be recalculated
-    }));
+
+    setUserStats(prevStats => {
+      const todayDateString = new Date().toISOString().split('T')[0];
+      let newCurrentStreak = prevStats.currentStreak || 0;
+      let newLastStreakIncrementDate = prevStats.lastStreakIncrementDate;
+
+      if (prevStats.lastStreakIncrementDate === todayDateString) {
+        // Streak has already been incremented today, or it's the first med taken today but streak was already handled.
+        // No change to streak variables from what they were at the start of this update.
+      } else {
+        // This is the first medication taken today that affects the streak,
+        // or the streak was broken.
+        if (isConsecutiveDay(prevStats.lastStreakIncrementDate, todayDateString)) {
+          newCurrentStreak = (prevStats.currentStreak || 0) + 1;
+        } else {
+          // Streak broken or first time any medication is taken (for streak purposes)
+          newCurrentStreak = 1;
+        }
+        newLastStreakIncrementDate = todayDateString;
+      }
+
+      const newLongestStreak = Math.max(prevStats.longestStreak || 0, newCurrentStreak);
+      
+      // Overall adherence should be recalculated based on all medication logs,
+      // not just incremented like this. This is a placeholder.
+      const currentOverallAdherence = prevStats.overallAdherence; 
+
+      return {
+        ...prevStats,
+        points: (prevStats.points || 0) + 10,
+        currentStreak: newCurrentStreak,
+        longestStreak: newLongestStreak,
+        lastStreakIncrementDate: newLastStreakIncrementDate,
+        overallAdherence: currentOverallAdherence, 
+      };
+    });
   };
 
   const addInAppNotification = useCallback((med: UpcomingMedication) => {
@@ -249,9 +310,9 @@ export default function DashboardPage() {
           <CardDescription className="text-lg">Here&apos;s your medication overview for today. Current time: {isClient ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Loading...'}</CardDescription>
         </CardHeader>
         <CardContent className="grid md:grid-cols-3 gap-6">
-          <StatCard icon={Zap} title="Points" value={userStats.points.toString()} color="text-yellow-500" />
-          <StatCard icon={TrendingUp} title="Current Streak" value={`${userStats.currentStreak} days`} color="text-green-500" />
-          <StatCard icon={CalendarDays} title="Overall Adherence" value={`${userStats.overallAdherence}%`} color="text-blue-500" />
+          <StatCard icon={Zap} title="Points" value={(userStats.points || 0).toString()} color="text-yellow-500" />
+          <StatCard icon={TrendingUp} title="Current Streak" value={`${userStats.currentStreak || 0} days`} color="text-green-500" />
+          <StatCard icon={CalendarDays} title="Overall Adherence" value={`${userStats.overallAdherence || 0}%`} color="text-blue-500" />
         </CardContent>
       </Card>
 
@@ -319,9 +380,9 @@ export default function DashboardPage() {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Daily Goal</span>
-                  <span>{userStats.overallAdherence}%</span>
+                  <span>{userStats.overallAdherence || 0}%</span>
                 </div>
-                <Progress value={userStats.overallAdherence} aria-label={`${userStats.overallAdherence}% adherence`} />
+                <Progress value={userStats.overallAdherence || 0} aria-label={`${userStats.overallAdherence || 0}% adherence`} />
                 <p className="text-xs text-muted-foreground text-center pt-2">
                   Keep up the great work! Consistency is key.
                 </p>
@@ -374,4 +435,3 @@ function StatCard({ icon: Icon, title, value, color }: StatCardProps) {
     </div>
   );
 }
-

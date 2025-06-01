@@ -8,12 +8,12 @@ import { UserStats } from '@/lib/types';
 import { Progress } from '@/components/ui/progress';
 import Image from 'next/image';
 
-// Mock data for initial structure / fallback
 const defaultInitialUserStats: UserStats = {
-  points: 1250,
-  currentStreak: 15,
-  longestStreak: 28,
-  overallAdherence: 88,
+  points: 0,
+  currentStreak: 0,
+  longestStreak: 0,
+  overallAdherence: 0,
+  lastStreakIncrementDate: undefined,
 };
 
 interface Badge {
@@ -30,17 +30,17 @@ interface Badge {
 // Define badge conditions here so they can react to userStats
 const badgeDefinitions: Omit<Badge, 'achieved' | 'progress'>[] = [
   { id: '1', name: 'Perfect Week', description: '7 days of perfect adherence.', icon: Star, tier: 'silver', 
-    condition: (stats) => ({ achieved: stats.currentStreak >= 7, progress: Math.min(100, (stats.currentStreak / 7) * 100) }) },
+    condition: (stats) => ({ achieved: (stats.currentStreak || 0) >= 7, progress: Math.min(100, ((stats.currentStreak || 0) / 7) * 100) }) },
   { id: '2', name: 'Month Miler', description: '30 days of perfect adherence.', icon: Award, tier: 'gold',
-    condition: (stats) => ({ achieved: stats.currentStreak >= 30, progress: Math.min(100, (stats.currentStreak / 30) * 100) }) },
+    condition: (stats) => ({ achieved: (stats.currentStreak || 0) >= 30, progress: Math.min(100, ((stats.currentStreak || 0) / 30) * 100) }) },
   { id: '3', name: 'Early Bird', description: 'Took morning meds on time for 5 days (simulated).', icon: Zap, tier: 'bronze', 
-    condition: (stats) => ({ achieved: stats.points > 500, progress: stats.points > 500 ? 100: (stats.points/500)*100 }) }, // Example, replace with real logic
+    condition: (stats) => ({ achieved: (stats.points || 0) > 500, progress: (stats.points || 0) > 500 ? 100: ((stats.points || 0)/500)*100 }) }, 
   { id: '4', name: 'Consistency King', description: 'Achieved 90% adherence overall.', icon: ShieldCheck, tier: 'silver', 
-    condition: (stats) => ({ achieved: stats.overallAdherence >= 90, progress: stats.overallAdherence }) },
+    condition: (stats) => ({ achieved: (stats.overallAdherence || 0) >= 90, progress: (stats.overallAdherence || 0) }) },
   { id: '5', name: 'Streak Starter', description: 'Achieved a 3-day streak.', icon: TrendingUp, tier: 'bronze',
-    condition: (stats) => ({ achieved: stats.currentStreak >= 3, progress: Math.min(100, (stats.currentStreak / 3) * 100) }) },
+    condition: (stats) => ({ achieved: (stats.currentStreak || 0) >= 3, progress: Math.min(100, ((stats.currentStreak || 0) / 3) * 100) }) },
   { id: '6', name: 'Point Hoarder', description: 'Earned over 1000 points.', icon: CheckCircle, tier: 'bronze', 
-    condition: (stats) => ({ achieved: stats.points >= 1000, progress:  Math.min(100, (stats.points / 1000) * 100)}) },
+    condition: (stats) => ({ achieved: (stats.points || 0) >= 1000, progress:  Math.min(100, ((stats.points || 0) / 1000) * 100)}) },
 ];
 
 
@@ -56,9 +56,20 @@ export default function RewardsPage() {
 
   useEffect(() => {
     if (isClient) {
+      setIsLoading(true);
       const storedUserStatsString = localStorage.getItem('pillPalUserStats');
       if (storedUserStatsString) {
-        setUserStats(JSON.parse(storedUserStatsString));
+        try {
+          const parsedStats = JSON.parse(storedUserStatsString);
+           setUserStats({
+            ...defaultInitialUserStats, // provides defaults for new fields like lastStreakIncrementDate
+            ...parsedStats // overrides with stored values
+          });
+        } catch (e) {
+            console.error("Error parsing user stats from localStorage", e);
+            setUserStats(defaultInitialUserStats);
+            localStorage.setItem('pillPalUserStats', JSON.stringify(defaultInitialUserStats));
+        }
       } else {
         setUserStats(defaultInitialUserStats);
         localStorage.setItem('pillPalUserStats', JSON.stringify(defaultInitialUserStats));
@@ -100,9 +111,9 @@ export default function RewardsPage() {
           <CardDescription className="text-lg">Stay motivated by tracking your points, streaks, and earned badges!</CardDescription>
         </CardHeader>
         <CardContent className="grid md:grid-cols-3 gap-6">
-          <RewardStatCard icon={Zap} title="Total Points" value={userStats.points.toString()} bgColor="bg-yellow-400/10" iconColor="text-yellow-500" />
-          <RewardStatCard icon={TrendingUp} title="Current Streak" value={`${userStats.currentStreak} Days`} bgColor="bg-green-400/10" iconColor="text-green-500" />
-          <RewardStatCard icon={Star} title="Longest Streak" value={`${userStats.longestStreak} Days`} bgColor="bg-blue-400/10" iconColor="text-blue-500" />
+          <RewardStatCard icon={Zap} title="Total Points" value={(userStats.points || 0).toString()} bgColor="bg-yellow-400/10" iconColor="text-yellow-500" />
+          <RewardStatCard icon={TrendingUp} title="Current Streak" value={`${userStats.currentStreak || 0} Days`} bgColor="bg-green-400/10" iconColor="text-green-500" />
+          <RewardStatCard icon={Star} title="Longest Streak" value={`${userStats.longestStreak || 0} Days`} bgColor="bg-blue-400/10" iconColor="text-blue-500" />
         </CardContent>
       </Card>
 
@@ -193,5 +204,3 @@ function BadgeCard({ badge }: BadgeCardProps) {
     </Card>
   );
 }
-
-    

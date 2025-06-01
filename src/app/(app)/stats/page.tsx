@@ -9,12 +9,12 @@ import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "
 import { UserStats } from '@/lib/types';
 import Image from 'next/image';
 
-// Mock data for fallback / initial structure
 const defaultInitialUserStats: UserStats = {
-  points: 1250,
-  currentStreak: 15,
-  longestStreak: 28,
-  overallAdherence: 88,
+  points: 0,
+  currentStreak: 0,
+  longestStreak: 0,
+  overallAdherence: 0,
+  lastStreakIncrementDate: undefined,
 };
 
 const weeklyAdherenceData = [
@@ -63,9 +63,20 @@ export default function StatsPage() {
 
   useEffect(() => {
     if (isClient) {
+      setIsLoading(true);
       const storedUserStatsString = localStorage.getItem('pillPalUserStats');
       if (storedUserStatsString) {
-        setUserStats(JSON.parse(storedUserStatsString));
+        try {
+          const parsedStats = JSON.parse(storedUserStatsString);
+           setUserStats({
+            ...defaultInitialUserStats, // provides defaults for new fields like lastStreakIncrementDate
+            ...parsedStats // overrides with stored values
+          });
+        } catch (e) {
+            console.error("Error parsing user stats from localStorage", e);
+            setUserStats(defaultInitialUserStats);
+            localStorage.setItem('pillPalUserStats', JSON.stringify(defaultInitialUserStats));
+        }
       } else {
         // Use default if not found, and save it for next time
         setUserStats(defaultInitialUserStats);
@@ -102,10 +113,10 @@ export default function StatsPage() {
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatDisplayCard icon={Percent} title="Overall Adherence" value={`${userStats.overallAdherence}%`} description="Across all medications" />
-        <StatDisplayCard icon={TrendingUp} title="Current Streak" value={`${userStats.currentStreak} days`} description="Consistent adherence" />
-        <StatDisplayCard icon={CalendarCheck2} title="Longest Streak" value={`${userStats.longestStreak} days`} description="Your personal best!" />
-        <StatDisplayCard icon={BarChart3} title="Points Earned" value={userStats.points.toString()} description="From consistent adherence" />
+        <StatDisplayCard icon={Percent} title="Overall Adherence" value={`${userStats.overallAdherence || 0}%`} description="Across all medications" />
+        <StatDisplayCard icon={TrendingUp} title="Current Streak" value={`${userStats.currentStreak || 0} days`} description="Consistent adherence" />
+        <StatDisplayCard icon={CalendarCheck2} title="Longest Streak" value={`${userStats.longestStreak || 0} days`} description="Your personal best!" />
+        <StatDisplayCard icon={BarChart3} title="Points Earned" value={(userStats.points || 0).toString()} description="From consistent adherence" />
       </div>
 
       {hasWeeklyData ? (
@@ -208,5 +219,3 @@ function NoDataCard({ title, message }: NoDataCardProps) {
     </Card>
   );
 }
-
-    

@@ -23,6 +23,7 @@ export interface UserStats {
   currentStreak: number; // in days
   longestStreak: number; // in days
   overallAdherence: number; // percentage 0-100
+  lastStreakIncrementDate?: string; // YYYY-MM-DD
 }
 
 export interface HealthInsight {
