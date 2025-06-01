@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -5,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Medication, UserStats } from "@/lib/types";
-import { Bell, CalendarDays, CheckCircle, Clock, PlusCircle, TrendingUp, Zap } from "lucide-react";
+import { Bell, CalendarDays, CheckCircle, Clock, PlusCircle, TrendingUp, Zap, Pill, Award, Lightbulb } from "lucide-react";
 import Link from "next/link";
 import Image from 'next/image';
 
