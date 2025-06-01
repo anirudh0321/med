@@ -87,10 +87,10 @@ export default function SettingsPage() {
       <Card className="shadow-xl">
         <CardHeader>
           <div className="flex items-center gap-3 mb-1">
-            <SettingsIcon className="h-8 w-8 text-primary" />
-            <CardTitle className="text-3xl font-headline">Settings</CardTitle>
+            <SettingsIcon className="h-7 w-7 sm:h-8 sm:w-8 text-primary" />
+            <CardTitle className="text-2xl sm:text-3xl font-headline">Settings</CardTitle>
           </div>
-          <CardDescription className="text-lg">Manage your account preferences and application settings.</CardDescription>
+          <CardDescription className="text-base sm:text-lg">Manage your account preferences and application settings.</CardDescription>
         </CardHeader>
       </Card>
 
@@ -120,37 +120,40 @@ export default function SettingsPage() {
               <CardTitle className="text-xl font-headline flex items-center gap-2"><Bell className="w-5 h-5 text-primary"/> Notification Preferences</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="flex items-center justify-between space-x-2 p-3 rounded-md border hover:bg-muted/50">
-                <Label htmlFor="medicationReminders" className="font-normal flex-grow cursor-pointer">
-                  Medication Reminders
-                  <p className="text-xs text-muted-foreground">Receive push notifications for scheduled medications.</p>
-                </Label>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0 p-3 rounded-md border hover:bg-muted/50">
+                <div className="flex-grow">
+                  <Label htmlFor="medicationReminders" className="font-normal cursor-pointer text-base">Medication Reminders</Label>
+                  <p className="text-sm text-muted-foreground">Receive push notifications for scheduled medications.</p>
+                </div>
                 <Switch 
                   id="medicationReminders" 
                   checked={medicationRemindersEnabled}
                   onCheckedChange={setMedicationRemindersEnabled}
+                  className="mt-1 sm:mt-0 shrink-0"
                 />
               </div>
-              <div className="flex items-center justify-between space-x-2 p-3 rounded-md border hover:bg-muted/50">
-                <Label htmlFor="refillReminders" className="font-normal flex-grow cursor-pointer">
-                  Refill Reminders
-                  <p className="text-xs text-muted-foreground">Get notified when your medication is running low.</p>
-                </Label>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0 p-3 rounded-md border hover:bg-muted/50">
+                <div className="flex-grow">
+                  <Label htmlFor="refillReminders" className="font-normal cursor-pointer text-base">Refill Reminders</Label>
+                  <p className="text-sm text-muted-foreground">Get notified when your medication is running low.</p>
+                </div>
                 <Switch 
                   id="refillReminders"
                   checked={refillRemindersEnabled}
                   onCheckedChange={setRefillRemindersEnabled}
+                  className="mt-1 sm:mt-0 shrink-0"
                 />
               </div>
-              <div className="flex items-center justify-between space-x-2 p-3 rounded-md border hover:bg-muted/50">
-                <Label htmlFor="healthTips" className="font-normal flex-grow cursor-pointer">
-                  Health Tips & Insights
-                  <p className="text-xs text-muted-foreground">Receive occasional health tips and insights.</p>
-                </Label>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0 p-3 rounded-md border hover:bg-muted/50">
+                <div className="flex-grow">
+                  <Label htmlFor="healthTips" className="font-normal cursor-pointer text-base">Health Tips & Insights</Label>
+                  <p className="text-sm text-muted-foreground">Receive occasional health tips and insights.</p>
+                </div>
                 <Switch 
                   id="healthTips" 
                   checked={healthTipsEnabled}
                   onCheckedChange={setHealthTipsEnabled}
+                  className="mt-1 sm:mt-0 shrink-0"
                 />
               </div>
               <Button className="w-full mt-4" onClick={handleNotificationPreferencesSave}>Save Notification Preferences</Button>
@@ -162,16 +165,17 @@ export default function SettingsPage() {
                 <CardTitle className="text-xl font-headline flex items-center gap-2"><Palette className="w-5 h-5 text-primary"/> Appearance</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-                <div className="flex items-center justify-between space-x-2 p-3 rounded-md border hover:bg-muted/50">
-                    <Label htmlFor="darkMode" className="font-normal flex-grow cursor-pointer">
-                    Dark Mode
-                    <p className="text-xs text-muted-foreground">Toggle between light and dark themes.</p>
-                    </Label>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0 p-3 rounded-md border hover:bg-muted/50">
+                    <div className="flex-grow">
+                        <Label htmlFor="darkMode" className="font-normal cursor-pointer text-base">Dark Mode</Label>
+                        <p className="text-sm text-muted-foreground">Toggle between light and dark themes.</p>
+                    </div>
                     <Switch 
                       id="darkMode" 
                       checked={darkModeEnabled}
                       onCheckedChange={setDarkModeEnabled}
                       disabled // Dark mode toggle would need actual theme switching logic
+                      className="mt-1 sm:mt-0 shrink-0"
                     />
                 </div>
                 <p className="text-sm text-muted-foreground">More appearance settings coming soon!</p>
@@ -192,7 +196,7 @@ export default function SettingsPage() {
               <h4 className="font-semibold">Delete Account</h4>
               <p className="text-sm text-muted-foreground">Permanently delete your account and all associated data. This action cannot be undone.</p>
             </div>
-            <Button variant="destructive" className="mt-2 sm:mt-0 sm:ml-4 shrink-0" onClick={() => toast({variant: "destructive", title: "Action Disabled", description: "Account deletion is not implemented yet."})}>Delete My Account</Button>
+            <Button variant="destructive" className="mt-2 sm:mt-0 sm:ml-4 shrink-0 w-full sm:w-auto" onClick={() => toast({variant: "destructive", title: "Action Disabled", description: "Account deletion is not implemented yet."})}>Delete My Account</Button>
           </div>
         </CardContent>
       </Card>
@@ -200,3 +204,4 @@ export default function SettingsPage() {
     </div>
   );
 }
+

@@ -367,10 +367,10 @@ export default function DashboardPage() {
     <div className="container mx-auto p-6 lg:p-8">
       <Card className="mb-8 shadow-lg bg-gradient-to-r from-primary/10 to-accent/10 border-primary/30">
         <CardHeader>
-          <CardTitle className="text-3xl font-headline text-primary">Welcome Back!</CardTitle>
-          <CardDescription className="text-lg">Here&apos;s your medication overview for today. Current time: {isClient ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Loading...'}</CardDescription>
+          <CardTitle className="text-2xl sm:text-3xl font-headline text-primary">Welcome Back!</CardTitle>
+          <CardDescription className="text-base sm:text-lg">Here&apos;s your medication overview for today. Current time: {isClient ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Loading...'}</CardDescription>
         </CardHeader>
-        <CardContent className="grid md:grid-cols-3 gap-6">
+        <CardContent className="grid md:grid-cols-3 gap-4 md:gap-6">
           <StatCard icon={Zap} title="Points" value={(userStats.points || 0).toString()} color="text-yellow-500" />
           <StatCard icon={TrendingUp} title="Current Streak" value={`${userStats.currentStreak || 0} days`} color="text-green-500" />
           <StatCard icon={CalendarDays} title="Overall Adherence" value={`${userStats.overallAdherence || 0}%`} color="text-blue-500" />
@@ -381,7 +381,7 @@ export default function DashboardPage() {
         <div className="lg:col-span-2">
           <Card className="shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-2xl font-headline">Today&apos;s Medications</CardTitle>
+              <CardTitle className="text-xl sm:text-2xl font-headline">Today&apos;s Medications</CardTitle>
               <Link href="/medications/add" passHref>
                 <Button variant="outline" size="sm">
                   <PlusCircle className="mr-2 h-4 w-4" /> Add Medication
@@ -402,20 +402,20 @@ export default function DashboardPage() {
 
                     return (
                       <li key={`${med.id}-${med.scheduledTime}`} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-lg border bg-card hover:shadow-md transition-shadow">
-                        <div className="flex items-center gap-4">
-                           <MedIcon className={`h-8 w-8 ${isTakenToday ? 'text-green-500' : 'text-primary'}`} />
+                        <div className="flex items-center gap-3 sm:gap-4">
+                           <MedIcon className={`h-7 w-7 sm:h-8 sm:w-8 ${isTakenToday ? 'text-green-500' : 'text-primary'}`} />
                           <div>
-                            <h3 className="font-semibold text-lg">{med.name}</h3>
+                            <h3 className="font-semibold text-base sm:text-lg">{med.name}</h3>
                             <p className="text-sm text-muted-foreground">{med.dosage} - {med.scheduledTime}</p>
-                            {med.instructions && <p className="text-xs text-muted-foreground/80">{med.instructions}</p>}
+                            {med.instructions && <p className="text-xs text-muted-foreground/80 pt-1">{med.instructions}</p>}
                           </div>
                         </div>
                         {!isTakenToday ? (
-                          <Button onClick={() => handleTakeMedication(med.id, med.scheduledTime)} size="sm">
+                          <Button onClick={() => handleTakeMedication(med.id, med.scheduledTime)} size="sm" className="w-full sm:w-auto">
                             <CheckCircle className="mr-2 h-4 w-4" /> Mark as Taken
                           </Button>
                         ) : (
-                           <span className="text-sm text-green-600 font-medium flex items-center"><CheckCircle className="mr-1 h-4 w-4" /> Taken</span>
+                           <span className="text-sm text-green-600 font-medium flex items-center self-center sm:self-auto"><CheckCircle className="mr-1 h-4 w-4" /> Taken</span>
                         )}
                       </li>
                     )
@@ -423,8 +423,8 @@ export default function DashboardPage() {
                 </ul>
               ) : (
                 <div className="text-center py-8">
-                  <Image src="https://placehold.co/300x200.png" alt="All medications taken" width={300} height={200} className="mx-auto mb-4 rounded-lg" data-ai-hint="celebration empty state" />
-                  <p className="text-muted-foreground text-lg">All medications for today are logged or none are scheduled!</p>
+                  <Image src="https://placehold.co/300x200.png" alt="All medications taken" width={300} height={200} className="mx-auto mb-4 rounded-lg max-w-[80%] sm:max-w-xs" data-ai-hint="celebration empty state" />
+                  <p className="text-muted-foreground text-base sm:text-lg">All medications for today are logged or none are scheduled!</p>
                   <p className="text-sm text-muted-foreground">Add a new one or check back tomorrow.</p>
                 </div>
               )}
@@ -435,7 +435,7 @@ export default function DashboardPage() {
         <div className="space-y-8">
           <Card className="shadow-lg">
             <CardHeader>
-              <CardTitle className="text-xl font-headline">Adherence Progress</CardTitle>
+              <CardTitle className="text-lg sm:text-xl font-headline">Adherence Progress</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
@@ -456,7 +456,7 @@ export default function DashboardPage() {
           
           <Card className="shadow-lg">
             <CardHeader>
-              <CardTitle className="text-xl font-headline">Quick Actions</CardTitle>
+              <CardTitle className="text-lg sm:text-xl font-headline">Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
                 <Button className="w-full justify-start" variant="ghost" asChild>
@@ -485,14 +485,15 @@ interface StatCardProps {
 
 function StatCard({ icon: Icon, title, value, color }: StatCardProps) {
   return (
-    <div className="p-6 bg-card rounded-xl shadow-md flex items-center space-x-4 border hover:border-primary/50 transition-all">
-      <div className={`p-3 rounded-full bg-primary/10 ${color}`}>
-        <Icon className="w-7 h-7" />
+    <div className="p-4 sm:p-6 bg-card rounded-xl shadow-md flex items-center space-x-3 sm:space-x-4 border hover:border-primary/50 transition-all">
+      <div className={`p-2 sm:p-3 rounded-full bg-primary/10 ${color}`}>
+        <Icon className="w-6 h-6 sm:w-7 sm:h-7" />
       </div>
       <div>
-        <p className="text-sm text-muted-foreground font-medium">{title}</p>
-        <p className="text-2xl font-bold text-foreground">{value}</p>
+        <p className="text-xs sm:text-sm text-muted-foreground font-medium">{title}</p>
+        <p className="text-xl sm:text-2xl font-bold text-foreground">{value}</p>
       </div>
     </div>
   );
 }
+

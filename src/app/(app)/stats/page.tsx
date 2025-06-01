@@ -105,14 +105,14 @@ export default function StatsPage() {
       <Card className="shadow-xl">
         <CardHeader>
           <div className="flex items-center gap-3 mb-1">
-            <BarChart3 className="h-8 w-8 text-primary" />
-            <CardTitle className="text-3xl font-headline">Adherence Statistics</CardTitle>
+            <BarChart3 className="h-7 w-7 sm:h-8 sm:w-8 text-primary" />
+            <CardTitle className="text-2xl sm:text-3xl font-headline">Adherence Statistics</CardTitle>
           </div>
-          <CardDescription>Visualize your medication adherence over time and gain insights into your habits.</CardDescription>
+          <CardDescription className="text-sm sm:text-base">Visualize your medication adherence over time and gain insights into your habits.</CardDescription>
         </CardHeader>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <StatDisplayCard icon={Percent} title="Overall Adherence" value={`${userStats.overallAdherence || 0}%`} description="Across all medications" />
         <StatDisplayCard icon={TrendingUp} title="Current Streak" value={`${userStats.currentStreak || 0} days`} description="Consistent adherence" />
         <StatDisplayCard icon={CalendarCheck2} title="Longest Streak" value={`${userStats.longestStreak || 0} days`} description="Your personal best!" />
@@ -123,21 +123,21 @@ export default function StatsPage() {
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle className="text-xl font-headline">Weekly Adherence Trend</CardTitle>
-            <CardDescription>Number of doses taken vs. scheduled this week. (Sample Data)</CardDescription>
+            <CardDescription className="text-sm">Number of doses taken vs. scheduled this week. (Sample Data)</CardDescription>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={chartConfig} className="h-[300px] w-full">
+            <ChartContainer config={chartConfig} className="h-[250px] sm:h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={weeklyAdherenceData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
+                <BarChart data={weeklyAdherenceData} margin={{ top: 5, right: 10, left: -25, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="day" tickLine={false} axisLine={false} />
-                  <YAxis allowDecimals={false} tickLine={false} axisLine={false} />
+                  <XAxis dataKey="day" tickLine={false} axisLine={false} fontSize={12} />
+                  <YAxis allowDecimals={false} tickLine={false} axisLine={false} fontSize={12} />
                   <RechartsTooltip
                     content={<ChartTooltipContent />}
                     cursor={{ fill: 'hsl(var(--accent) / 0.2)' }}
                   />
-                  <Bar dataKey="taken" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} barSize={30} />
-                  <Bar dataKey="scheduled" fill="hsl(var(--muted))" radius={[4, 4, 0, 0]} barSize={30} />
+                  <Bar dataKey="taken" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} barSize={20} sm-barSize={30} />
+                  <Bar dataKey="scheduled" fill="hsl(var(--muted))" radius={[4, 4, 0, 0]} barSize={20} sm-barSize={30}/>
                 </BarChart>
               </ResponsiveContainer>
             </ChartContainer>
@@ -152,15 +152,15 @@ export default function StatsPage() {
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle className="text-xl font-headline">Monthly Adherence (%)</CardTitle>
-            <CardDescription>Your adherence percentage over the past few months. (Sample Data)</CardDescription>
+            <CardDescription className="text-sm">Your adherence percentage over the past few months. (Sample Data)</CardDescription>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={chartConfig} className="h-[300px] w-full">
+            <ChartContainer config={chartConfig} className="h-[250px] sm:h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={monthlyAdherenceData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
+                <BarChart data={monthlyAdherenceData} margin={{ top: 5, right: 10, left: -25, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="month" tickLine={false} axisLine={false} />
-                  <YAxis domain={[0, 100]} unit="%" tickLine={false} axisLine={false}/>
+                  <XAxis dataKey="month" tickLine={false} axisLine={false} fontSize={12} />
+                  <YAxis domain={[0, 100]} unit="%" tickLine={false} axisLine={false} fontSize={12}/>
                   <RechartsTooltip
                     content={<ChartTooltipContent indicator="dot" />}
                     cursor={{ fill: 'hsl(var(--accent) / 0.2)' }}
@@ -193,7 +193,7 @@ function StatDisplayCard({ icon: Icon, title, value, description }: StatDisplayC
         <Icon className="h-5 w-5 text-muted-foreground" />
       </CardHeader>
       <CardContent>
-        <div className="text-3xl font-bold text-primary">{value}</div>
+        <div className="text-2xl sm:text-3xl font-bold text-primary">{value}</div>
         <p className="text-xs text-muted-foreground pt-1">{description}</p>
       </CardContent>
     </Card>
@@ -212,10 +212,11 @@ function NoDataCard({ title, message }: NoDataCardProps) {
         <CardTitle className="text-xl font-headline">{title}</CardTitle>
       </CardHeader>
       <CardContent className="text-center py-10">
-        <Image src="https://placehold.co/300x200.png" alt="No data available" width={200} height={133} className="mx-auto mb-4 rounded-lg opacity-70" data-ai-hint="data chart empty" />
+        <Image src="https://placehold.co/300x200.png" alt="No data available" width={200} height={133} className="mx-auto mb-4 rounded-lg opacity-70 max-w-[70%] sm:max-w-xs" data-ai-hint="data chart empty" />
         <AlertTriangle className="h-12 w-12 text-yellow-500 mx-auto mb-3" />
         <p className="text-muted-foreground">{message}</p>
       </CardContent>
     </Card>
   );
 }
+

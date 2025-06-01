@@ -105,12 +105,12 @@ export default function RewardsPage() {
       <Card className="shadow-xl bg-gradient-to-br from-primary/10 via-accent/5 to-background">
         <CardHeader>
           <div className="flex items-center gap-3 mb-1">
-            <Award className="h-10 w-10 text-primary" />
-            <CardTitle className="text-3xl font-headline">Your Rewards & Achievements</CardTitle>
+            <Award className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
+            <CardTitle className="text-2xl sm:text-3xl font-headline">Your Rewards & Achievements</CardTitle>
           </div>
-          <CardDescription className="text-lg">Stay motivated by tracking your points, streaks, and earned badges!</CardDescription>
+          <CardDescription className="text-base sm:text-lg">Stay motivated by tracking your points, streaks, and earned badges!</CardDescription>
         </CardHeader>
-        <CardContent className="grid md:grid-cols-3 gap-6">
+        <CardContent className="grid md:grid-cols-3 gap-4 md:gap-6">
           <RewardStatCard icon={Zap} title="Total Points" value={(userStats.points || 0).toString()} bgColor="bg-yellow-400/10" iconColor="text-yellow-500" />
           <RewardStatCard icon={TrendingUp} title="Current Streak" value={`${userStats.currentStreak || 0} Days`} bgColor="bg-green-400/10" iconColor="text-green-500" />
           <RewardStatCard icon={Star} title="Longest Streak" value={`${userStats.longestStreak || 0} Days`} bgColor="bg-blue-400/10" iconColor="text-blue-500" />
@@ -119,19 +119,19 @@ export default function RewardsPage() {
 
       <Card className="shadow-lg">
         <CardHeader>
-          <CardTitle className="text-2xl font-headline">Badges Earned</CardTitle>
-          <CardDescription>Collect badges for your achievements and milestones.</CardDescription>
+          <CardTitle className="text-xl sm:text-2xl font-headline">Badges Earned</CardTitle>
+          <CardDescription className="text-sm sm:text-base">Collect badges for your achievements and milestones.</CardDescription>
         </CardHeader>
         <CardContent>
           {badges.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
               {badges.map((badge) => (
                 <BadgeCard key={badge.id} badge={badge} />
               ))}
             </div>
           ) : (
             <div className="text-center py-10">
-               <Image src="https://placehold.co/300x200.png" alt="No badges earned" width={200} height={133} className="mx-auto mb-4 rounded-lg opacity-70" data-ai-hint="empty state trophy" />
+               <Image src="https://placehold.co/300x200.png" alt="No badges earned" width={200} height={133} className="mx-auto mb-4 rounded-lg opacity-70 max-w-[70%] sm:max-w-xs" data-ai-hint="empty state trophy" />
               <p className="text-muted-foreground">No badges earned yet. Keep up the good work to unlock them!</p>
             </div>
           )}
@@ -140,7 +140,7 @@ export default function RewardsPage() {
 
       <Card className="shadow-lg">
         <CardHeader>
-          <CardTitle className="text-2xl font-headline">How to Earn Points</CardTitle>
+          <CardTitle className="text-xl sm:text-2xl font-headline">How to Earn Points</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 text-muted-foreground">
             <p><strong className="text-foreground">Log Medication on Time:</strong> +10 points</p>
@@ -164,12 +164,12 @@ interface RewardStatCardProps {
 
 function RewardStatCard({ icon: Icon, title, value, bgColor, iconColor }: RewardStatCardProps) {
   return (
-    <div className={`p-6 rounded-xl shadow-md flex flex-col items-center text-center ${bgColor} border border-transparent hover:border-primary/30 transition-all`}>
-      <div className={`p-4 rounded-full mb-3 ${iconColor} bg-background`}>
-        <Icon className="w-8 h-8" />
+    <div className={`p-4 sm:p-6 rounded-xl shadow-md flex flex-col items-center text-center ${bgColor} border border-transparent hover:border-primary/30 transition-all`}>
+      <div className={`p-3 sm:p-4 rounded-full mb-2 sm:mb-3 ${iconColor} bg-background`}>
+        <Icon className="w-7 h-7 sm:w-8 sm:h-8" />
       </div>
-      <h3 className="text-lg font-semibold text-foreground">{title}</h3>
-      <p className={`text-3xl font-bold ${iconColor}`}>{value}</p>
+      <h3 className="text-base sm:text-lg font-semibold text-foreground">{title}</h3>
+      <p className={`text-2xl sm:text-3xl font-bold ${iconColor}`}>{value}</p>
     </div>
   );
 }
@@ -188,11 +188,11 @@ function BadgeCard({ badge }: BadgeCardProps) {
   }
 
   return (
-    <Card className={`flex flex-col items-center p-6 text-center transition-all hover:shadow-xl ${badge.achieved ? 'opacity-100' : 'opacity-60 hover:opacity-100'} border-2 ${tierColor} ${badge.achieved ? 'shadow-lg' : ''}`}>
-      <div className={`mb-3 p-3 rounded-full ${badge.achieved ? (badge.tier === 'gold' ? 'bg-yellow-500/20 text-yellow-600' : badge.tier === 'silver' ? 'bg-slate-400/20 text-slate-500' : 'bg-yellow-700/20 text-yellow-800') : 'bg-muted text-muted-foreground'}`}>
-        <Icon className="w-10 h-10" />
+    <Card className={`flex flex-col items-center p-4 sm:p-6 text-center transition-all hover:shadow-xl ${badge.achieved ? 'opacity-100' : 'opacity-60 hover:opacity-100'} border-2 ${tierColor} ${badge.achieved ? 'shadow-lg' : ''}`}>
+      <div className={`mb-2 sm:mb-3 p-2 sm:p-3 rounded-full ${badge.achieved ? (badge.tier === 'gold' ? 'bg-yellow-500/20 text-yellow-600' : badge.tier === 'silver' ? 'bg-slate-400/20 text-slate-500' : 'bg-yellow-700/20 text-yellow-800') : 'bg-muted text-muted-foreground'}`}>
+        <Icon className="w-8 h-8 sm:w-10 sm:h-10" />
       </div>
-      <h4 className="font-semibold text-lg mb-1">{badge.name}</h4>
+      <h4 className="font-semibold text-base sm:text-lg mb-1">{badge.name}</h4>
       <p className="text-xs text-muted-foreground mb-3 h-10">{badge.description}</p>
       {badge.progress !== undefined && !badge.achieved && (
         <div className="w-full mt-auto">
@@ -204,3 +204,4 @@ function BadgeCard({ badge }: BadgeCardProps) {
     </Card>
   );
 }
+

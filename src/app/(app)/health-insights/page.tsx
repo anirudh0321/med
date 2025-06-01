@@ -61,10 +61,10 @@ export default function HealthInsightsPage() {
       <Card className="shadow-xl">
         <CardHeader>
           <div className="flex items-center gap-3 mb-1">
-            <ShieldCheck className="h-8 w-8 text-primary" />
-            <CardTitle className="text-3xl font-headline">Personalized Health & Safety Insights</CardTitle>
+            <ShieldCheck className="h-7 w-7 sm:h-8 sm:w-8 text-primary" />
+            <CardTitle className="text-2xl sm:text-3xl font-headline">Personalized Health & Safety Insights</CardTitle>
           </div>
-          <CardDescription className="text-lg">
+          <CardDescription className="text-base sm:text-lg">
             Use our AI tool to check relevance of health advice to your medications, and browse general wellness tips.
           </CardDescription>
         </CardHeader>
@@ -75,10 +75,10 @@ export default function HealthInsightsPage() {
       <Card className="shadow-lg">
         <CardHeader>
           <div className="flex items-center gap-2">
-            <BookOpen className="w-7 h-7 text-primary" />
-            <CardTitle className="text-2xl font-headline">General Wellness Tips</CardTitle>
+            <BookOpen className="w-6 h-6 sm:w-7 sm:h-7 text-primary" />
+            <CardTitle className="text-xl sm:text-2xl font-headline">General Wellness Tips</CardTitle>
           </div>
-          <CardDescription>
+          <CardDescription className="text-sm sm:text-base">
             Browse these general tips for improving your overall health. Always consult your doctor for personalized medical advice.
           </CardDescription>
         </CardHeader>
@@ -87,7 +87,7 @@ export default function HealthInsightsPage() {
             generalTips.map(tip => (
               <Card key={tip.id} className="bg-accent/10 border-accent/30 hover:shadow-md transition-shadow">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-lg flex items-center gap-2">
+                  <CardTitle className="text-base sm:text-lg flex items-center gap-2">
                     <Lightbulb className="w-5 h-5 text-accent" />
                     {tip.title}
                   </CardTitle>
@@ -100,7 +100,7 @@ export default function HealthInsightsPage() {
             ))
           ) : (
              <div className="text-center py-10">
-              <Image src="https://placehold.co/300x200.png" alt="No tips available" width={200} height={133} className="mx-auto mb-4 rounded-lg opacity-70" data-ai-hint="empty state lightbulb" />
+              <Image src="https://placehold.co/300x200.png" alt="No tips available" width={200} height={133} className="mx-auto mb-4 rounded-lg opacity-70 max-w-[70%] sm:max-w-xs" data-ai-hint="empty state lightbulb" />
               <p className="text-muted-foreground">No general wellness tips available at the moment. Check back later!</p>
             </div>
           )}
@@ -117,3 +117,4 @@ export default function HealthInsightsPage() {
     </div>
   );
 }
+

@@ -123,14 +123,14 @@ export default function AddMedicationPage() {
       <Card className="max-w-2xl mx-auto shadow-xl">
         <CardHeader>
           <div className="flex items-center gap-2 mb-2">
-            <Pill className="w-8 h-8 text-primary" />
-            <CardTitle className="text-3xl font-headline">Add New Medication</CardTitle>
+            <Pill className="w-7 h-7 sm:w-8 sm:h-8 text-primary" />
+            <CardTitle className="text-2xl sm:text-3xl font-headline">Add New Medication</CardTitle>
           </div>
-          <CardDescription>Fill in the details of your medication. Accurate information helps Pill Pal remind you effectively.</CardDescription>
+          <CardDescription className="text-sm sm:text-base">Fill in the details of your medication. Accurate information helps Pill Pal remind you effectively.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
                 control={form.control}
                 name="name"
@@ -332,11 +332,11 @@ export default function AddMedicationPage() {
                   </FormItem>
                 )}
               />
-              <div className="flex justify-end gap-4">
-                <Button type="button" variant="outline" asChild>
+              <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4 mt-8">
+                <Button type="button" variant="outline" className="w-full sm:w-auto" asChild>
                     <Link href="/medications/list">Cancel</Link>
                 </Button>
-                <Button type="submit" className="bg-primary hover:bg-primary/90" disabled={!isClient}>
+                <Button type="submit" className="bg-primary hover:bg-primary/90 w-full sm:w-auto" disabled={!isClient}>
                   <PlusCircle className="mr-2 h-5 w-5" /> Add Medication
                 </Button>
               </div>
