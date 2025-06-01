@@ -3,13 +3,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Award, Star, Zap, ShieldCheck, TrendingUp, CheckCircle } from "lucide-react";
+import { Award, Star, Zap, ShieldCheck, TrendingUp, CheckCircle, Loader2 } from "lucide-react";
 import { UserStats } from '@/lib/types';
 import { Progress } from '@/components/ui/progress';
 import Image from 'next/image';
 
-// Mock data
-const initialUserStats: UserStats = {
+// Mock data for initial structure / fallback
+const defaultInitialUserStats: UserStats = {
   points: 1250,
   currentStreak: 15,
   longestStreak: 28,
@@ -22,40 +22,68 @@ interface Badge {
   description: string;
   icon: React.ElementType;
   achieved: boolean;
-  progress?: number; // Optional: 0-100 for progress towards badge
+  progress?: number; 
   tier?: 'bronze' | 'silver' | 'gold';
+  condition: (stats: UserStats) => { achieved: boolean; progress: number };
 }
 
-const initialBadges: Badge[] = [
-  { id: '1', name: 'Perfect Week', description: '7 days of perfect adherence.', icon: Star, achieved: true, tier: 'silver' },
-  { id: '2', name: 'Month Miler', description: '30 days of perfect adherence.', icon: Award, achieved: false, progress: 50, tier: 'gold' }, // 15 / 30 days = 50%
-  { id: '3', name: 'Early Bird', description: 'Took morning meds on time for 5 days.', icon: Zap, achieved: true, tier: 'bronze' },
-  { id: '4', name: 'Consistency King', description: 'Achieved 90% adherence for a month.', icon: ShieldCheck, achieved: false, progress: initialUserStats.overallAdherence >= 90 ? 100 : initialUserStats.overallAdherence, tier: 'silver' },
-  { id: '5', name: 'Streak Starter', description: 'Achieved a 3-day streak.', icon: TrendingUp, achieved: true, tier: 'bronze'},
-  { id: '6', name: 'Quick Logger', description: 'Logged 10 medications within 5 minutes of reminder.', icon: CheckCircle, achieved: false, progress: 30, tier: 'bronze' },
+// Define badge conditions here so they can react to userStats
+const badgeDefinitions: Omit<Badge, 'achieved' | 'progress'>[] = [
+  { id: '1', name: 'Perfect Week', description: '7 days of perfect adherence.', icon: Star, tier: 'silver', 
+    condition: (stats) => ({ achieved: stats.currentStreak >= 7, progress: Math.min(100, (stats.currentStreak / 7) * 100) }) },
+  { id: '2', name: 'Month Miler', description: '30 days of perfect adherence.', icon: Award, tier: 'gold',
+    condition: (stats) => ({ achieved: stats.currentStreak >= 30, progress: Math.min(100, (stats.currentStreak / 30) * 100) }) },
+  { id: '3', name: 'Early Bird', description: 'Took morning meds on time for 5 days (simulated).', icon: Zap, tier: 'bronze', 
+    condition: (stats) => ({ achieved: stats.points > 500, progress: stats.points > 500 ? 100: (stats.points/500)*100 }) }, // Example, replace with real logic
+  { id: '4', name: 'Consistency King', description: 'Achieved 90% adherence overall.', icon: ShieldCheck, tier: 'silver', 
+    condition: (stats) => ({ achieved: stats.overallAdherence >= 90, progress: stats.overallAdherence }) },
+  { id: '5', name: 'Streak Starter', description: 'Achieved a 3-day streak.', icon: TrendingUp, tier: 'bronze',
+    condition: (stats) => ({ achieved: stats.currentStreak >= 3, progress: Math.min(100, (stats.currentStreak / 3) * 100) }) },
+  { id: '6', name: 'Point Hoarder', description: 'Earned over 1000 points.', icon: CheckCircle, tier: 'bronze', 
+    condition: (stats) => ({ achieved: stats.points >= 1000, progress:  Math.min(100, (stats.points / 1000) * 100)}) },
 ];
 
 
 export default function RewardsPage() {
-  const [userStats, setUserStats] = useState<UserStats>(initialUserStats);
-  const [badges, setBadges] = useState<Badge[]>(() => initialBadges.map(b => {
-    if (b.id === '2') return {...b, progress: Math.round((userStats.currentStreak / 30) * 100) };
-    if (b.id === '4') return {...b, progress: userStats.overallAdherence };
-    return b;
-  }));
+  const [isClient, setIsClient] = useState(false);
+  const [userStats, setUserStats] = useState<UserStats>(defaultInitialUserStats);
+  const [badges, setBadges] = useState<Badge[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate data fetching
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 500);
+    setIsClient(true);
   }, []);
 
-  if (isLoading) {
+  useEffect(() => {
+    if (isClient) {
+      const storedUserStatsString = localStorage.getItem('pillPalUserStats');
+      if (storedUserStatsString) {
+        setUserStats(JSON.parse(storedUserStatsString));
+      } else {
+        setUserStats(defaultInitialUserStats);
+        localStorage.setItem('pillPalUserStats', JSON.stringify(defaultInitialUserStats));
+      }
+      // Badges will be calculated in the next effect, after userStats is set
+    }
+  }, [isClient]);
+
+  useEffect(() => {
+    if (isClient) {
+        // Calculate badges based on current userStats
+        const calculatedBadges = badgeDefinitions.map(def => {
+            const { achieved, progress } = def.condition(userStats);
+            return { ...def, achieved, progress };
+        });
+        setBadges(calculatedBadges);
+        setIsLoading(false); // Data (stats and badges) is now ready
+    }
+  }, [userStats, isClient]); // Re-calculate badges when userStats changes
+
+
+  if (isLoading && isClient) {
      return (
       <div className="container mx-auto p-6 lg:p-8 flex justify-center items-center min-h-[calc(100vh-10rem)]">
-        <Award className="h-16 w-16 text-primary animate-bounce" />
+        <Loader2 className="h-16 w-16 text-primary animate-spin" />
         <p className="ml-4 text-xl text-muted-foreground">Loading your rewards...</p>
       </div>
     );
@@ -130,7 +158,7 @@ function RewardStatCard({ icon: Icon, title, value, bgColor, iconColor }: Reward
         <Icon className="w-8 h-8" />
       </div>
       <h3 className="text-lg font-semibold text-foreground">{title}</h3>
-      <p className="text-3xl font-bold ${iconColor}">{value}</p>
+      <p className={`text-3xl font-bold ${iconColor}`}>{value}</p>
     </div>
   );
 }
@@ -165,3 +193,5 @@ function BadgeCard({ badge }: BadgeCardProps) {
     </Card>
   );
 }
+
+    

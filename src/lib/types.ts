@@ -5,8 +5,10 @@ export interface Medication {
   dosage: string;
   frequency: 'once_daily' | 'twice_daily' | 'thrice_daily' | 'every_other_day' | 'as_needed';
   times: string[]; // e.g., ['08:00', '20:00']
+  startDate?: string; // ISO Date string
+  endDate?: string; // ISO Date string
   instructions?: string; // e.g., "Take with food"
-  icon?: React.ElementType; // Optional: Lucide icon component
+  icon?: React.ElementType; // Optional: Lucide icon component - for client-side state only, not for localStorage
   adherence: AdherenceLog[]; // Log of taken status
 }
 
@@ -32,3 +34,5 @@ export interface HealthInsight {
   source?: string; // e.g., "AI Generated" or "General Health Tip"
   type: 'ai_safety' | 'general_tip';
 }
+
+    

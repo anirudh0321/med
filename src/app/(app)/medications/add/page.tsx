@@ -25,6 +25,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { Medication } from "@/lib/types"; // Import Medication type
+import React, { useState, useEffect } from 'react';
+import { useToast } from "@/hooks/use-toast";
+
 
 const timeSchema = z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Invalid time format (HH:MM)");
 
@@ -32,15 +36,18 @@ const medicationFormSchema = z.object({
   name: z.string().min(2, "Medication name must be at least 2 characters."),
   dosage: z.string().min(1, "Dosage is required."),
   frequency: z.enum(["once_daily", "twice_daily", "thrice_daily", "every_other_day", "as_needed"]),
-  times: z.array(timeSchema).min(1, "At least one time is required, unless frequency is 'as_needed'."),
+  times: z.array(timeSchema).min(0), // Allow 0 times initially, refine will handle logic
   startDate: z.date({ required_error: "Start date is required."}),
   endDate: z.date().optional(),
   instructions: z.string().optional(),
 }).refine(data => {
-  if (data.frequency === "as_needed") return true;
+  if (data.frequency === "as_needed") {
+    data.times = []; // Ensure times is empty for 'as_needed'
+    return true;
+  }
   return data.times.length > 0;
 }, {
-  message: "Please specify medication times or select 'as needed'.",
+  message: "At least one time is required, unless frequency is 'as needed'.",
   path: ["times"],
 });
 
@@ -49,6 +56,13 @@ type MedicationFormValues = z.infer<typeof medicationFormSchema>;
 
 export default function AddMedicationPage() {
   const router = useRouter();
+  const { toast } = useToast();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   const form = useForm<MedicationFormValues>({
     resolver: zodResolver(medicationFormSchema),
     defaultValues: {
@@ -65,10 +79,42 @@ export default function AddMedicationPage() {
     name: "times",
   });
 
+  const frequency = form.watch("frequency");
+
+  useEffect(() => {
+    if (frequency === "as_needed") {
+      form.setValue("times", []); // Clear times if frequency is 'as_needed'
+    } else if (frequency === "once_daily" && form.getValues("times").length === 0) {
+      form.setValue("times", ["08:00"]);
+    }
+  }, [frequency, form]);
+
+
   function onSubmit(data: MedicationFormValues) {
-    console.log("Medication data:", data);
-    // Mock submission: In a real app, save to backend/local state
-    // For now, navigate to a list page or dashboard
+    if (!isClient) return;
+
+    const newMedication: Medication = {
+      ...data,
+      id: Date.now().toString(), // Simple ID generation
+      adherence: [],
+      // No icon property needed here, it will be handled by rendering logic
+      startDate: data.startDate.toISOString(), // Ensure date is string for storage
+      endDate: data.endDate ? data.endDate.toISOString() : undefined,
+    };
+
+    const storedMedicationsString = localStorage.getItem('pillPalMedications');
+    let medications: Medication[] = [];
+    if (storedMedicationsString) {
+      medications = JSON.parse(storedMedicationsString);
+    }
+    
+    const updatedMedications = [...medications, newMedication];
+    localStorage.setItem('pillPalMedications', JSON.stringify(updatedMedications));
+    
+    toast({
+      title: "Medication Added",
+      description: `${data.name} has been successfully added to your list.`,
+    });
     router.push("/medications/list");
   }
 
@@ -157,21 +203,28 @@ export default function AddMedicationPage() {
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                           )}
-                          <FormMessage />
+                          <FormMessage /> {/* For individual time field errors */}
                         </FormItem>
                       )}
                     />
                   ))}
+                   {/* General error message for the times array (e.g., min length) */}
+                  {form.formState.errors.times && !form.formState.errors.times.message && (
+                    <FormMessage>
+                      {form.formState.errors.times.root?.message || form.formState.errors.times[0]?.message}
+                    </FormMessage>
+                  )}
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     className="mt-2"
-                    onClick={() => append("09:00")}
+                    onClick={() => append("09:00")} // Default time to add
+                    disabled={fields.length >= 5} // Example: limit to 5 times
                   >
                     <PlusCircle className="mr-2 h-4 w-4" /> Add Time
                   </Button>
-                   <FormMessage>{form.formState.errors.times?.message}</FormMessage>
+                  {form.formState.errors.times?.message && <FormMessage>{form.formState.errors.times.message}</FormMessage>}
                 </FormItem>
               )}
 
@@ -281,9 +334,9 @@ export default function AddMedicationPage() {
               />
               <div className="flex justify-end gap-4">
                 <Button type="button" variant="outline" asChild>
-                    <Link href="/dashboard">Cancel</Link>
+                    <Link href="/medications/list">Cancel</Link>
                 </Button>
-                <Button type="submit" className="bg-primary hover:bg-primary/90">
+                <Button type="submit" className="bg-primary hover:bg-primary/90" disabled={!isClient}>
                   <PlusCircle className="mr-2 h-5 w-5" /> Add Medication
                 </Button>
               </div>
@@ -294,3 +347,5 @@ export default function AddMedicationPage() {
     </div>
   );
 }
+
+    

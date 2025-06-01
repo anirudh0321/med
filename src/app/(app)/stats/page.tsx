@@ -3,14 +3,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart3, TrendingUp, Percent, CalendarCheck2, AlertTriangle } from "lucide-react";
+import { BarChart3, TrendingUp, Percent, CalendarCheck2, AlertTriangle, Loader2 } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis, Tooltip as RechartsTooltip } from 'recharts';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { UserStats } from '@/lib/types';
 import Image from 'next/image';
 
-// Mock data
-const initialUserStats: UserStats = {
+// Mock data for fallback / initial structure
+const defaultInitialUserStats: UserStats = {
   points: 1250,
   currentStreak: 15,
   longestStreak: 28,
@@ -53,26 +53,38 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export default function StatsPage() {
-  const [userStats, setUserStats] = useState<UserStats>(initialUserStats);
+  const [isClient, setIsClient] = useState(false);
+  const [userStats, setUserStats] = useState<UserStats>(defaultInitialUserStats);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate data fetching
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 500);
+    setIsClient(true);
   }, []);
 
-  if (isLoading) {
+  useEffect(() => {
+    if (isClient) {
+      const storedUserStatsString = localStorage.getItem('pillPalUserStats');
+      if (storedUserStatsString) {
+        setUserStats(JSON.parse(storedUserStatsString));
+      } else {
+        // Use default if not found, and save it for next time
+        setUserStats(defaultInitialUserStats);
+        localStorage.setItem('pillPalUserStats', JSON.stringify(defaultInitialUserStats));
+      }
+      setIsLoading(false);
+    }
+  }, [isClient]);
+
+
+  if (isLoading && isClient) {
      return (
       <div className="container mx-auto p-6 lg:p-8 flex justify-center items-center min-h-[calc(100vh-10rem)]">
-        <BarChart3 className="h-16 w-16 text-primary animate-pulse" />
+        <Loader2 className="h-16 w-16 text-primary animate-spin" />
         <p className="ml-4 text-xl text-muted-foreground">Loading adherence statistics...</p>
       </div>
     );
   }
 
-  // Check if there's enough data for charts
   const hasWeeklyData = weeklyAdherenceData && weeklyAdherenceData.length > 0;
   const hasMonthlyData = monthlyAdherenceData && monthlyAdherenceData.length > 0;
 
@@ -100,7 +112,7 @@ export default function StatsPage() {
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle className="text-xl font-headline">Weekly Adherence Trend</CardTitle>
-            <CardDescription>Number of doses taken vs. scheduled this week.</CardDescription>
+            <CardDescription>Number of doses taken vs. scheduled this week. (Sample Data)</CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer config={chartConfig} className="h-[300px] w-full">
@@ -129,7 +141,7 @@ export default function StatsPage() {
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle className="text-xl font-headline">Monthly Adherence (%)</CardTitle>
-            <CardDescription>Your adherence percentage over the past few months.</CardDescription>
+            <CardDescription>Your adherence percentage over the past few months. (Sample Data)</CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer config={chartConfig} className="h-[300px] w-full">
@@ -196,3 +208,5 @@ function NoDataCard({ title, message }: NoDataCardProps) {
     </Card>
   );
 }
+
+    

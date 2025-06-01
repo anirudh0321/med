@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Medication } from "@/lib/types";
-import { Pill, Edit3, Trash2, PlusCircle, Search, Filter } from "lucide-react";
+import { Pill, Edit3, Trash2, PlusCircle, Search, Filter, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { Input } from '@/components/ui/input';
 import {
@@ -25,9 +25,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import Image from 'next/image';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
-// Mock data - replace with API calls in a real app
-const initialMedications: Medication[] = [
+// Default mock data - used if localStorage is empty
+const defaultInitialMedications: Medication[] = [
   { id: '1', name: 'Lisinopril', dosage: '10mg', frequency: 'once_daily', times: ['08:00'], instructions: 'Take with water', adherence: [] },
   { id: '2', name: 'Metformin', dosage: '500mg', frequency: 'twice_daily', times: ['08:00', '20:00'], adherence: [] },
   { id: '3', name: 'Atorvastatin', dosage: '20mg', frequency: 'once_daily', times: ['21:00'], instructions: 'Take before bed', adherence: [] },
@@ -36,31 +47,53 @@ const initialMedications: Medication[] = [
 ];
 
 export default function MedicationsListPage() {
-  const [medications, setMedications] = useState<Medication[]>(initialMedications);
+  const [isClient, setIsClient] = useState(false);
+  const [medications, setMedications] = useState<Medication[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate data fetching
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 500);
+    setIsClient(true);
   }, []);
+
+  useEffect(() => {
+    if (isClient) {
+      const storedMedicationsString = localStorage.getItem('pillPalMedications');
+      if (storedMedicationsString) {
+        setMedications(JSON.parse(storedMedicationsString));
+      } else {
+        setMedications(defaultInitialMedications);
+        localStorage.setItem('pillPalMedications', JSON.stringify(defaultInitialMedications.map(m => {
+          const { icon, ...rest } = m; return rest;
+        })));
+      }
+      setIsLoading(false);
+    }
+  }, [isClient]);
+
+  // Save medications to localStorage when they change
+  useEffect(() => {
+    if (isClient && !isLoading) { // Only save after initial load
+      localStorage.setItem('pillPalMedications', JSON.stringify(medications.map(m => {
+        const { icon, ...rest } = m; return rest;
+      })));
+    }
+  }, [medications, isClient, isLoading]);
+
 
   const filteredMedications = medications.filter(med =>
     med.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    med.dosage.toLowerCase().includes(searchTerm.toLowerCase())
+    (med.dosage && med.dosage.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const handleDeleteMedication = (id: string) => {
-    // Add a confirmation dialog here in a real app
     setMedications(prevMeds => prevMeds.filter(med => med.id !== id));
   };
 
-  if (isLoading) {
+  if (isLoading && isClient) {
     return (
       <div className="container mx-auto p-6 lg:p-8 flex justify-center items-center min-h-[calc(100vh-10rem)]">
-        <Pill className="h-16 w-16 text-primary animate-spin" />
+        <Loader2 className="h-16 w-16 text-primary animate-spin" />
         <p className="ml-4 text-xl text-muted-foreground">Loading medications...</p>
       </div>
     );
@@ -96,10 +129,6 @@ export default function MedicationsListPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            {/* Future filter button */}
-            {/* <Button variant="outline">
-              <Filter className="mr-2 h-4 w-4" /> Filters
-            </Button> */}
           </div>
 
           {filteredMedications.length > 0 ? (
@@ -131,17 +160,32 @@ export default function MedicationsListPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem disabled>
                               {/* <Link href={`/medications/edit/${med.id}`}>Edit</Link> */}
                               Edit (Not implemented)
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => handleDeleteMedication(med.id)}
-                              className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                            >
-                              Delete
-                            </DropdownMenuItem>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" className="w-full justify-start text-destructive hover:bg-destructive/10 hover:text-destructive focus:text-destructive px-2 py-1.5 h-auto text-sm relative">
+                                  Delete
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This action cannot be undone. This will permanently delete the medication "{med.name}".
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleDeleteMedication(med.id)} className="bg-destructive hover:bg-destructive/90">
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -152,10 +196,12 @@ export default function MedicationsListPage() {
             </div>
           ) : (
             <div className="text-center py-12">
-              <Image src="https://placehold.co/400x300.png" alt="No medications found" width={300} height={225} className="mx-auto mb-6 rounded-lg" data-ai-hint="empty state search" />
-              <h3 className="text-xl font-semibold mb-2">No Medications Found</h3>
+               <Image src={searchTerm ? "https://placehold.co/300x220.png" : "https://placehold.co/300x250.png"} alt={searchTerm ? "No medications match search" : "No medications added"} width={searchTerm ? 300 : 250} height={searchTerm ? 220 : 200} className="mx-auto mb-6 rounded-lg" data-ai-hint={searchTerm ? "empty search results" : "empty state pills"} />
+              <p className="text-xl text-muted-foreground mb-2">
+                {searchTerm ? "No Medications Found" : "No Medications Yet"}
+              </p>
               <p className="text-muted-foreground mb-4">
-                {searchTerm ? "Try adjusting your search or add a new medication." : "You haven't added any medications yet."}
+                {searchTerm ? "Try adjusting your search or add a new medication." : "You haven't added any medications yet. Add one to get started!"}
               </p>
               {!searchTerm && (
                 <Link href="/medications/add" passHref>
@@ -178,3 +224,5 @@ export default function MedicationsListPage() {
     </div>
   );
 }
+
+    

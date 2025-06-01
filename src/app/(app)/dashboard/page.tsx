@@ -10,14 +10,14 @@ import { Bell, CalendarDays, CheckCircle, Clock, PlusCircle, TrendingUp, Zap, Pi
 import Link from "next/link";
 import Image from 'next/image';
 
-// Mock data - replace with API calls in a real app
-const initialMedications: Medication[] = [
+// Default mock data - used if localStorage is empty
+const defaultInitialMedications: Medication[] = [
   { id: '1', name: 'Lisinopril', dosage: '10mg', frequency: 'once_daily', times: ['08:00'], instructions: 'Take with water', adherence: [{date: '2023-10-26', time: '08:00', taken: true}], icon: CheckCircle },
   { id: '2', name: 'Metformin', dosage: '500mg', frequency: 'twice_daily', times: ['08:00', '20:00'], adherence: [], icon: Clock },
   { id: '3', name: 'Atorvastatin', dosage: '20mg', frequency: 'once_daily', times: ['21:00'], instructions: 'Take before bed', adherence: [], icon: Clock },
 ];
 
-const initialUserStats: UserStats = {
+const defaultInitialUserStats: UserStats = {
   points: 1250,
   currentStreak: 15,
   longestStreak: 28,
@@ -27,11 +27,60 @@ const initialUserStats: UserStats = {
 type UpcomingMedication = Medication & { scheduledTime: string };
 
 export default function DashboardPage() {
-  const [medications, setMedications] = useState<Medication[]>(initialMedications);
-  const [userStats, setUserStats] = useState<UserStats>(initialUserStats);
+  const [isClient, setIsClient] = useState(false);
+  const [medications, setMedications] = useState<Medication[]>([]);
+  const [userStats, setUserStats] = useState<UserStats>(defaultInitialUserStats);
   const [currentTime, setCurrentTime] = useState<string>('');
   const [upcomingMedications, setUpcomingMedications] = useState<UpcomingMedication[]>([]);
-  const [isLoadingUpcoming, setIsLoadingUpcoming] = useState(true);
+  const [isLoadingData, setIsLoadingData] = useState(true); // Combined loading state
+
+  useEffect(() => {
+    setIsClient(true); // Component has mounted
+  }, []);
+
+  useEffect(() => {
+    if (isClient) {
+      // Load medications
+      const storedMedicationsString = localStorage.getItem('pillPalMedications');
+      if (storedMedicationsString) {
+        setMedications(JSON.parse(storedMedicationsString));
+      } else {
+        setMedications(defaultInitialMedications);
+        localStorage.setItem('pillPalMedications', JSON.stringify(defaultInitialMedications.map(m => {
+          const { icon, ...rest } = m; // Omit icon component before saving
+          return rest;
+        })));
+      }
+
+      // Load user stats
+      const storedUserStatsString = localStorage.getItem('pillPalUserStats');
+      if (storedUserStatsString) {
+        setUserStats(JSON.parse(storedUserStatsString));
+      } else {
+        setUserStats(defaultInitialUserStats);
+        localStorage.setItem('pillPalUserStats', JSON.stringify(defaultInitialUserStats));
+      }
+      setIsLoadingData(false);
+    }
+  }, [isClient]);
+
+  // Save medications to localStorage when they change
+  useEffect(() => {
+    if (isClient && !isLoadingData) { // Only save after initial load/set
+      localStorage.setItem('pillPalMedications', JSON.stringify(medications.map(m => {
+        const { icon, ...rest } = m; // Omit icon component before saving
+        return rest;
+      })));
+    }
+  }, [medications, isClient, isLoadingData]);
+
+  // Save user stats to localStorage when they change
+  useEffect(() => {
+    if (isClient && !isLoadingData) { // Only save after initial load/set
+      localStorage.setItem('pillPalUserStats', JSON.stringify(userStats));
+    }
+  }, [userStats, isClient, isLoadingData]);
+
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -41,16 +90,16 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    setIsLoadingUpcoming(true);
-    const todayDateString = new Date().toISOString().split('T')[0];
-    const calculatedUpcoming = medications
-      .flatMap(med => med.times.map(time => ({ ...med, scheduledTime: time })))
-      .filter(med => !med.adherence.find(log => log.date === todayDateString && log.time === med.scheduledTime && log.taken))
-      .sort((a, b) => a.scheduledTime.localeCompare(b.scheduledTime));
-    
-    setUpcomingMedications(calculatedUpcoming);
-    setIsLoadingUpcoming(false);
-  }, [medications]);
+    if (!isLoadingData) { // Recalculate upcoming only when data is loaded and medications change
+      const todayDateString = new Date().toISOString().split('T')[0];
+      const calculatedUpcoming = medications
+        .flatMap(med => med.times.map(time => ({ ...med, scheduledTime: time })))
+        .filter(med => !med.adherence.find(log => log.date === todayDateString && log.time === med.scheduledTime && log.taken))
+        .sort((a, b) => a.scheduledTime.localeCompare(b.scheduledTime));
+      
+      setUpcomingMedications(calculatedUpcoming);
+    }
+  }, [medications, isLoadingData]);
   
   const handleTakeMedication = (medId: string, time: string) => {
     setMedications(prevMeds => 
@@ -61,10 +110,19 @@ export default function DashboardPage() {
     setUserStats(prevStats => ({
       ...prevStats,
       points: prevStats.points + 10,
-      currentStreak: prevStats.currentStreak + 1, // This logic would be more complex
-      overallAdherence: Math.min(100, prevStats.overallAdherence + 2) // Simplified
+      currentStreak: prevStats.currentStreak + 1,
+      overallAdherence: Math.min(100, prevStats.overallAdherence + 2) 
     }));
   };
+
+  if (isLoadingData && isClient) {
+    return (
+      <div className="container mx-auto p-6 lg:p-8 flex justify-center items-center min-h-[calc(100vh-10rem)]">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="ml-3 text-lg text-muted-foreground">Loading your dashboard...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-6 lg:p-8">
@@ -92,7 +150,7 @@ export default function DashboardPage() {
               </Link>
             </CardHeader>
             <CardContent>
-              {isLoadingUpcoming ? (
+              {isLoadingData ? (
                 <div className="flex justify-center items-center py-8">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   <p className="ml-2 text-muted-foreground">Loading medications...</p>
@@ -100,33 +158,35 @@ export default function DashboardPage() {
               ) : upcomingMedications.length > 0 ? (
                 <ul className="space-y-4">
                   {upcomingMedications.map((med) => {
-                    const MedIcon = med.icon || Clock;
                     const isTakenToday = med.adherence.find(log => log.date === new Date().toISOString().split('T')[0] && log.time === med.scheduledTime && log.taken);
+                    const MedIcon = isTakenToday ? CheckCircle : med.icon || Clock; // Use CheckCircle if taken, else med.icon (from state), finally Clock
 
                     return (
-                    <li key={`${med.id}-${med.scheduledTime}`} className="flex items-center justify-between p-4 rounded-lg border bg-card hover:shadow-md transition-shadow">
-                      <div className="flex items-center gap-4">
-                        <MedIcon className={`h-8 w-8 ${isTakenToday ? 'text-green-500' : 'text-primary'}`} />
-                        <div>
-                          <h3 className="font-semibold text-lg">{med.name}</h3>
-                          <p className="text-sm text-muted-foreground">{med.dosage} - {med.scheduledTime}</p>
-                          {med.instructions && <p className="text-xs text-muted-foreground/80">{med.instructions}</p>}
+                      <li key={`${med.id}-${med.scheduledTime}`} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-lg border bg-card hover:shadow-md transition-shadow">
+                        <div className="flex items-center gap-4">
+                           <MedIcon className={`h-8 w-8 ${isTakenToday ? 'text-green-500' : 'text-primary'}`} />
+                          <div>
+                            <h3 className="font-semibold text-lg">{med.name}</h3>
+                            <p className="text-sm text-muted-foreground">{med.dosage} - {med.scheduledTime}</p>
+                            {med.instructions && <p className="text-xs text-muted-foreground/80">{med.instructions}</p>}
+                          </div>
                         </div>
-                      </div>
-                      {!isTakenToday ? (
-                        <Button onClick={() => handleTakeMedication(med.id, med.scheduledTime)} size="sm">
-                          <CheckCircle className="mr-2 h-4 w-4" /> Mark as Taken
-                        </Button>
-                      ) : (
-                         <span className="text-sm text-green-600 font-medium flex items-center"><CheckCircle className="mr-1 h-4 w-4" /> Taken</span>
-                      )}
-                    </li>
-                  )})}
+                        {!isTakenToday ? (
+                          <Button onClick={() => handleTakeMedication(med.id, med.scheduledTime)} size="sm">
+                            <CheckCircle className="mr-2 h-4 w-4" /> Mark as Taken
+                          </Button>
+                        ) : (
+                           <span className="text-sm text-green-600 font-medium flex items-center"><CheckCircle className="mr-1 h-4 w-4" /> Taken</span>
+                        )}
+                      </li>
+                    )
+                  })}
                 </ul>
               ) : (
                 <div className="text-center py-8">
                   <Image src="https://placehold.co/300x200.png" alt="All medications taken" width={300} height={200} className="mx-auto mb-4 rounded-lg" data-ai-hint="celebration empty state" />
-                  <p className="text-muted-foreground text-lg">All medications for today are logged. Great job!</p>
+                  <p className="text-muted-foreground text-lg">All medications for today are logged!</p>
+                  <p className="text-sm text-muted-foreground">Add a new one or check back tomorrow.</p>
                 </div>
               )}
             </CardContent>
@@ -197,3 +257,5 @@ function StatCard({ icon: Icon, title, value, color }: StatCardProps) {
     </div>
   );
 }
+
+    
