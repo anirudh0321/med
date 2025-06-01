@@ -1,3 +1,4 @@
+
 "use client";
 import type { ReactNode } from 'react';
 import Link from 'next/link';
@@ -28,7 +29,7 @@ import {
   SidebarMenuSub,
   SidebarMenuSubItem,
   SidebarMenuSubButton,
-  SidebarTrigger, // Already present in AppHeader if needed, but can be part of sidebar header too
+  SidebarTrigger, 
   SidebarGroup,
   SidebarGroupLabel,
 } from '@/components/ui/sidebar';
@@ -170,7 +171,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             {/* Footer content if any, e.g. app version */}
           </SidebarFooter>
         </Sidebar>
-        <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-[var(--sidebar-width-icon)] group-data-[state=expanded]:sm:pl-[var(--sidebar-width)] transition-[padding-left] duration-200 ease-linear">
+        <div className="flex flex-1 flex-col sm:pl-[var(--sidebar-width-icon)] group-data-[state=expanded]:sm:pl-[var(--sidebar-width)] transition-[padding-left] duration-200 ease-linear">
            <AppHeader />
            <main className="flex-1 p-4 md:p-6 overflow-auto">
              {children}
