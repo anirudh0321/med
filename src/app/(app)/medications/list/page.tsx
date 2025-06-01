@@ -36,15 +36,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { format } from 'date-fns';
 
 // Default mock data - used if localStorage is empty
-const defaultInitialMedications: Medication[] = [
-  { id: '1', name: 'Lisinopril', dosage: '10mg', frequency: 'once_daily', times: ['08:00'], instructions: 'Take with water', adherence: [] },
-  { id: '2', name: 'Metformin', dosage: '500mg', frequency: 'twice_daily', times: ['08:00', '20:00'], adherence: [] },
-  { id: '3', name: 'Atorvastatin', dosage: '20mg', frequency: 'once_daily', times: ['21:00'], instructions: 'Take before bed', adherence: [] },
-  { id: '4', name: 'Amoxicillin', dosage: '250mg', frequency: 'thrice_daily', times: ['07:00', '15:00', '23:00'], adherence: [] },
-  { id: '5', name: 'Albuterol', dosage: '2 puffs', frequency: 'as_needed', times: [], instructions: 'For asthma attacks', adherence: [] },
-];
+const defaultInitialMedications: Medication[] = [];
 
 export default function MedicationsListPage() {
   const [isClient, setIsClient] = useState(false);
@@ -58,6 +53,7 @@ export default function MedicationsListPage() {
 
   useEffect(() => {
     if (isClient) {
+      setIsLoading(true);
       const storedMedicationsString = localStorage.getItem('pillPalMedications');
       if (storedMedicationsString) {
         setMedications(JSON.parse(storedMedicationsString));
@@ -140,6 +136,8 @@ export default function MedicationsListPage() {
                     <TableHead>Dosage</TableHead>
                     <TableHead>Frequency</TableHead>
                     <TableHead>Times</TableHead>
+                    <TableHead>Start Date</TableHead>
+                    <TableHead>End Date</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -150,6 +148,8 @@ export default function MedicationsListPage() {
                       <TableCell className="py-3">{med.dosage}</TableCell>
                       <TableCell className="py-3 capitalize">{med.frequency.replace('_', ' ')}</TableCell>
                       <TableCell className="py-3">{med.times.join(', ') || 'N/A'}</TableCell>
+                      <TableCell className="py-3">{med.startDate ? format(new Date(med.startDate), 'PPP') : 'N/A'}</TableCell>
+                      <TableCell className="py-3">{med.endDate ? format(new Date(med.endDate), 'PPP') : 'N/A'}</TableCell>
                       <TableCell className="text-right py-3">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -161,7 +161,6 @@ export default function MedicationsListPage() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuItem disabled>
-                              {/* <Link href={`/medications/edit/${med.id}`}>Edit</Link> */}
                               Edit (Not implemented)
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
@@ -224,5 +223,3 @@ export default function MedicationsListPage() {
     </div>
   );
 }
-
-    

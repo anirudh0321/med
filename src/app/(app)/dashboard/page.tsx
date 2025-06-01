@@ -11,11 +11,7 @@ import Link from "next/link";
 import Image from 'next/image';
 
 // Default mock data - used if localStorage is empty
-const defaultInitialMedications: Medication[] = [
-  { id: '1', name: 'Lisinopril', dosage: '10mg', frequency: 'once_daily', times: ['08:00'], instructions: 'Take with water', adherence: [{date: '2023-10-26', time: '08:00', taken: true}], icon: CheckCircle },
-  { id: '2', name: 'Metformin', dosage: '500mg', frequency: 'twice_daily', times: ['08:00', '20:00'], adherence: [], icon: Clock },
-  { id: '3', name: 'Atorvastatin', dosage: '20mg', frequency: 'once_daily', times: ['21:00'], instructions: 'Take before bed', adherence: [], icon: Clock },
-];
+const defaultInitialMedications: Medication[] = [];
 
 const defaultInitialUserStats: UserStats = {
   points: 1250,
@@ -40,6 +36,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (isClient) {
+      setIsLoadingData(true);
       // Load medications
       const storedMedicationsString = localStorage.getItem('pillPalMedications');
       if (storedMedicationsString) {
@@ -90,16 +87,38 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    if (!isLoadingData) { // Recalculate upcoming only when data is loaded and medications change
+    if (!isLoadingData && isClient) { 
       const todayDateString = new Date().toISOString().split('T')[0];
       const calculatedUpcoming = medications
         .flatMap(med => med.times.map(time => ({ ...med, scheduledTime: time })))
-        .filter(med => !med.adherence.find(log => log.date === todayDateString && log.time === med.scheduledTime && log.taken))
+        .filter(med => {
+            const isTaken = med.adherence.find(log => log.date === todayDateString && log.time === med.scheduledTime && log.taken);
+            // Filter out medications that have an end date that has passed
+            if (med.endDate) {
+                const endDate = new Date(med.endDate);
+                const today = new Date();
+                today.setHours(0,0,0,0); // Compare dates only
+                if (endDate < today) {
+                    return false;
+                }
+            }
+            // Filter out medications that have a start date in the future
+            if (med.startDate) {
+                const startDate = new Date(med.startDate);
+                startDate.setHours(0,0,0,0); // Compare dates only
+                const today = new Date();
+                today.setHours(0,0,0,0);
+                if (startDate > today) {
+                    return false;
+                }
+            }
+            return !isTaken;
+        })
         .sort((a, b) => a.scheduledTime.localeCompare(b.scheduledTime));
       
       setUpcomingMedications(calculatedUpcoming);
     }
-  }, [medications, isLoadingData]);
+  }, [medications, isLoadingData, isClient]);
   
   const handleTakeMedication = (medId: string, time: string) => {
     setMedications(prevMeds => 
@@ -159,7 +178,7 @@ export default function DashboardPage() {
                 <ul className="space-y-4">
                   {upcomingMedications.map((med) => {
                     const isTakenToday = med.adherence.find(log => log.date === new Date().toISOString().split('T')[0] && log.time === med.scheduledTime && log.taken);
-                    const MedIcon = isTakenToday ? CheckCircle : med.icon || Clock; // Use CheckCircle if taken, else med.icon (from state), finally Clock
+                    const MedIcon = isTakenToday ? CheckCircle : med.icon || Clock; 
 
                     return (
                       <li key={`${med.id}-${med.scheduledTime}`} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-lg border bg-card hover:shadow-md transition-shadow">
@@ -185,7 +204,7 @@ export default function DashboardPage() {
               ) : (
                 <div className="text-center py-8">
                   <Image src="https://placehold.co/300x200.png" alt="All medications taken" width={300} height={200} className="mx-auto mb-4 rounded-lg" data-ai-hint="celebration empty state" />
-                  <p className="text-muted-foreground text-lg">All medications for today are logged!</p>
+                  <p className="text-muted-foreground text-lg">All medications for today are logged or none are scheduled!</p>
                   <p className="text-sm text-muted-foreground">Add a new one or check back tomorrow.</p>
                 </div>
               )}
@@ -257,5 +276,3 @@ function StatCard({ icon: Icon, title, value, color }: StatCardProps) {
     </div>
   );
 }
-
-    

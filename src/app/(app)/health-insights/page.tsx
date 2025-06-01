@@ -6,14 +6,8 @@ import { HealthPromptForm } from '@/components/dashboard/health-prompt-form';
 import { Medication, HealthInsight } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, ShieldCheck, BookOpen, Lightbulb } from 'lucide-react';
+import { AlertCircle, ShieldCheck, BookOpen, Lightbulb, Loader2 } from 'lucide-react';
 import Image from 'next/image';
-
-// Mock data - replace with API calls in a real app
-const mockUserMedications: Medication[] = [
-  { id: '1', name: 'Lisinopril', dosage: '10mg', frequency: 'once_daily', times: ['08:00'], adherence: [] },
-  { id: '2', name: 'Metformin', dosage: '500mg', frequency: 'twice_daily', times: ['08:00', '20:00'], adherence: [] },
-];
 
 const mockGeneralTips: HealthInsight[] = [
   { id: 'tip1', title: 'Stay Hydrated', content: 'Drinking enough water is crucial for overall health and can affect how medications are absorbed and processed.', type: 'general_tip', source: 'General Health Wisdom' },
@@ -22,22 +16,41 @@ const mockGeneralTips: HealthInsight[] = [
 ];
 
 export default function HealthInsightsPage() {
-  const [userMedications, setUserMedications] = useState<Medication[]>(mockUserMedications);
+  const [isClient, setIsClient] = useState(false);
+  const [userMedications, setUserMedications] = useState<Medication[]>([]);
   const [generalTips, setGeneralTips] = useState<HealthInsight[]>(mockGeneralTips);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingPage, setIsLoadingPage] = useState(true); // For loading medications and tips
 
   useEffect(() => {
-    // Simulate data fetching
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 500);
+    setIsClient(true);
   }, []);
+
+  useEffect(() => {
+    if (isClient) {
+      setIsLoadingPage(true);
+      // Load medications from localStorage
+      const storedMedicationsString = localStorage.getItem('pillPalMedications');
+      if (storedMedicationsString) {
+        setUserMedications(JSON.parse(storedMedicationsString));
+      } else {
+        setUserMedications([]); // Default to empty if nothing in localStorage
+        // Initialize if it's the very first load for the app
+        localStorage.setItem('pillPalMedications', JSON.stringify([]));
+      }
+
+      // Simulate data fetching for general tips
+      // In a real app, this might be an API call
+      setGeneralTips(mockGeneralTips); 
+      
+      setIsLoadingPage(false);
+    }
+  }, [isClient]);
   
-  if (isLoading) {
+  if (isLoadingPage && isClient) {
      return (
       <div className="container mx-auto p-6 lg:p-8 flex justify-center items-center min-h-[calc(100vh-10rem)]">
-        <Lightbulb className="h-16 w-16 text-primary animate-pulse" />
-        <p className="ml-4 text-xl text-muted-foreground">Loading health insights...</p>
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="ml-3 text-lg text-muted-foreground">Loading health insights...</p>
       </div>
     );
   }
