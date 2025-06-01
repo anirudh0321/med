@@ -10,7 +10,6 @@ import { Bell, CalendarDays, CheckCircle, Clock, PlusCircle, TrendingUp, Zap, Pi
 import Link from "next/link";
 import Image from 'next/image';
 
-// Default mock data - used if localStorage is empty
 const defaultInitialMedications: Medication[] = [];
 
 const defaultInitialUserStats: UserStats = {
@@ -22,34 +21,35 @@ const defaultInitialUserStats: UserStats = {
 
 type UpcomingMedication = Medication & { scheduledTime: string };
 
+const LOCAL_STORAGE_MED_REMINDERS_KEY = 'pillPalMedicationRemindersEnabled';
+
 export default function DashboardPage() {
   const [isClient, setIsClient] = useState(false);
   const [medications, setMedications] = useState<Medication[]>([]);
   const [userStats, setUserStats] = useState<UserStats>(defaultInitialUserStats);
   const [currentTime, setCurrentTime] = useState<string>('');
   const [upcomingMedications, setUpcomingMedications] = useState<UpcomingMedication[]>([]);
-  const [isLoadingData, setIsLoadingData] = useState(true); // Combined loading state
+  const [isLoadingData, setIsLoadingData] = useState(true);
+  const [shownNotificationKeys, setShownNotificationKeys] = useState<string[]>([]);
 
   useEffect(() => {
-    setIsClient(true); // Component has mounted
+    setIsClient(true);
   }, []);
 
   useEffect(() => {
     if (isClient) {
       setIsLoadingData(true);
-      // Load medications
       const storedMedicationsString = localStorage.getItem('pillPalMedications');
       if (storedMedicationsString) {
         setMedications(JSON.parse(storedMedicationsString));
       } else {
         setMedications(defaultInitialMedications);
         localStorage.setItem('pillPalMedications', JSON.stringify(defaultInitialMedications.map(m => {
-          const { icon, ...rest } = m; // Omit icon component before saving
+          const { icon, ...rest } = m;
           return rest;
         })));
       }
 
-      // Load user stats
       const storedUserStatsString = localStorage.getItem('pillPalUserStats');
       if (storedUserStatsString) {
         setUserStats(JSON.parse(storedUserStatsString));
@@ -61,19 +61,17 @@ export default function DashboardPage() {
     }
   }, [isClient]);
 
-  // Save medications to localStorage when they change
   useEffect(() => {
-    if (isClient && !isLoadingData) { // Only save after initial load/set
+    if (isClient && !isLoadingData) {
       localStorage.setItem('pillPalMedications', JSON.stringify(medications.map(m => {
-        const { icon, ...rest } = m; // Omit icon component before saving
+        const { icon, ...rest } = m;
         return rest;
       })));
     }
   }, [medications, isClient, isLoadingData]);
 
-  // Save user stats to localStorage when they change
   useEffect(() => {
-    if (isClient && !isLoadingData) { // Only save after initial load/set
+    if (isClient && !isLoadingData) {
       localStorage.setItem('pillPalUserStats', JSON.stringify(userStats));
     }
   }, [userStats, isClient, isLoadingData]);
@@ -81,31 +79,32 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-    }, 1000);
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      setCurrentTime(`${hours}:${minutes}`);
+    }, 1000); // Update every second for more precise check, though notifications check per minute
     return () => clearInterval(timer);
   }, []);
 
   useEffect(() => {
-    if (!isLoadingData && isClient) { 
+    if (!isLoadingData && isClient) {
       const todayDateString = new Date().toISOString().split('T')[0];
       const calculatedUpcoming = medications
         .flatMap(med => med.times.map(time => ({ ...med, scheduledTime: time })))
         .filter(med => {
             const isTaken = med.adherence.find(log => log.date === todayDateString && log.time === med.scheduledTime && log.taken);
-            // Filter out medications that have an end date that has passed
             if (med.endDate) {
                 const endDate = new Date(med.endDate);
                 const today = new Date();
-                today.setHours(0,0,0,0); // Compare dates only
+                today.setHours(0,0,0,0);
                 if (endDate < today) {
                     return false;
                 }
             }
-            // Filter out medications that have a start date in the future
             if (med.startDate) {
                 const startDate = new Date(med.startDate);
-                startDate.setHours(0,0,0,0); // Compare dates only
+                startDate.setHours(0,0,0,0);
                 const today = new Date();
                 today.setHours(0,0,0,0);
                 if (startDate > today) {
@@ -129,10 +128,52 @@ export default function DashboardPage() {
     setUserStats(prevStats => ({
       ...prevStats,
       points: prevStats.points + 10,
-      currentStreak: prevStats.currentStreak + 1,
-      overallAdherence: Math.min(100, prevStats.overallAdherence + 2) 
+      currentStreak: prevStats.currentStreak + 1, // This should be more complex based on adherence history
+      overallAdherence: Math.min(100, prevStats.overallAdherence + 2) // This should be recalculated
     }));
   };
+
+  const showBrowserNotification = async (med: UpcomingMedication) => {
+    if (!('Notification' in window)) {
+      console.log("This browser does not support desktop notification");
+      return;
+    }
+
+    if (Notification.permission === 'granted') {
+      new Notification('Pill Pal Reminder', {
+        body: `Time to take your ${med.name} (${med.dosage}) at ${med.scheduledTime}`,
+        // icon: '/favicon.ico' // Optional: if you have a favicon in public folder
+      });
+    } else if (Notification.permission !== 'denied') {
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        new Notification('Pill Pal Reminder', {
+          body: `Time to take your ${med.name} (${med.dosage}) at ${med.scheduledTime}`,
+        });
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (!isClient || isLoadingData || !currentTime) return;
+
+    const remindersEnabledString = localStorage.getItem(LOCAL_STORAGE_MED_REMINDERS_KEY);
+    const remindersEnabled = remindersEnabledString ? JSON.parse(remindersEnabledString) : false;
+
+    if (!remindersEnabled) return;
+
+    upcomingMedications.forEach(med => {
+      if (med.scheduledTime === currentTime) {
+        const notificationKey = `${med.id}-${med.scheduledTime}-${new Date().toISOString().split('T')[0]}`;
+        if (!shownNotificationKeys.includes(notificationKey)) {
+          showBrowserNotification(med);
+          setShownNotificationKeys(prevKeys => [...prevKeys, notificationKey]);
+        }
+      }
+    });
+
+  }, [currentTime, upcomingMedications, isClient, isLoadingData, shownNotificationKeys]);
+
 
   if (isLoadingData && isClient) {
     return (
@@ -148,7 +189,7 @@ export default function DashboardPage() {
       <Card className="mb-8 shadow-lg bg-gradient-to-r from-primary/10 to-accent/10 border-primary/30">
         <CardHeader>
           <CardTitle className="text-3xl font-headline text-primary">Welcome Back!</CardTitle>
-          <CardDescription className="text-lg">Here&apos;s your medication overview for today.</CardDescription>
+          <CardDescription className="text-lg">Here&apos;s your medication overview for today. Current time: {isClient ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Loading...'}</CardDescription>
         </CardHeader>
         <CardContent className="grid md:grid-cols-3 gap-6">
           <StatCard icon={Zap} title="Points" value={userStats.points.toString()} color="text-yellow-500" />
