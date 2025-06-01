@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -68,11 +69,11 @@ export default function AddMedicationPage() {
     console.log("Medication data:", data);
     // Mock submission: In a real app, save to backend/local state
     // For now, navigate to a list page or dashboard
-    router.push("/medications/list"); 
+    router.push("/medications/list");
   }
 
   return (
-    <div className="container mx-auto py-8 px-4 md:px-6">
+    <div className="container mx-auto p-6 lg:p-8">
       <Card className="max-w-2xl mx-auto shadow-xl">
         <CardHeader>
           <div className="flex items-center gap-2 mb-2">
@@ -136,7 +137,7 @@ export default function AddMedicationPage() {
                   </FormItem>
                 )}
               />
-              
+
               {form.watch("frequency") !== "as_needed" && (
                 <FormItem>
                   <FormLabel>Times</FormLabel>

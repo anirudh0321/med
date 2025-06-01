@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -29,7 +30,7 @@ const initialBadges: Badge[] = [
   { id: '1', name: 'Perfect Week', description: '7 days of perfect adherence.', icon: Star, achieved: true, tier: 'silver' },
   { id: '2', name: 'Month Miler', description: '30 days of perfect adherence.', icon: Award, achieved: false, progress: 50, tier: 'gold' }, // 15 / 30 days = 50%
   { id: '3', name: 'Early Bird', description: 'Took morning meds on time for 5 days.', icon: Zap, achieved: true, tier: 'bronze' },
-  { id: '4', name: 'Consistency King', description: 'Achieved 90% adherence for a month.', icon: ShieldCheck, achieved: false, progress: userStats.overallAdherence >= 90 ? 100 : userStats.overallAdherence, tier: 'silver' },
+  { id: '4', name: 'Consistency King', description: 'Achieved 90% adherence for a month.', icon: ShieldCheck, achieved: false, progress: initialUserStats.overallAdherence >= 90 ? 100 : initialUserStats.overallAdherence, tier: 'silver' },
   { id: '5', name: 'Streak Starter', description: 'Achieved a 3-day streak.', icon: TrendingUp, achieved: true, tier: 'bronze'},
   { id: '6', name: 'Quick Logger', description: 'Logged 10 medications within 5 minutes of reminder.', icon: CheckCircle, achieved: false, progress: 30, tier: 'bronze' },
 ];
@@ -50,10 +51,10 @@ export default function RewardsPage() {
       setIsLoading(false);
     }, 500);
   }, []);
-  
+
   if (isLoading) {
      return (
-      <div className="container mx-auto py-8 px-4 md:px-6 flex justify-center items-center min-h-[calc(100vh-10rem)]">
+      <div className="container mx-auto p-6 lg:p-8 flex justify-center items-center min-h-[calc(100vh-10rem)]">
         <Award className="h-16 w-16 text-primary animate-bounce" />
         <p className="ml-4 text-xl text-muted-foreground">Loading your rewards...</p>
       </div>
@@ -61,7 +62,7 @@ export default function RewardsPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4 md:px-6 space-y-8">
+    <div className="container mx-auto p-6 lg:p-8 space-y-8">
       <Card className="shadow-xl bg-gradient-to-br from-primary/10 via-accent/5 to-background">
         <CardHeader>
           <div className="flex items-center gap-3 mb-1">
@@ -97,7 +98,7 @@ export default function RewardsPage() {
           )}
         </CardContent>
       </Card>
-      
+
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="text-2xl font-headline">How to Earn Points</CardTitle>

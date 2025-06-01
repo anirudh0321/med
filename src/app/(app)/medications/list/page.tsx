@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -46,7 +47,7 @@ export default function MedicationsListPage() {
     }, 500);
   }, []);
 
-  const filteredMedications = medications.filter(med => 
+  const filteredMedications = medications.filter(med =>
     med.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     med.dosage.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -58,7 +59,7 @@ export default function MedicationsListPage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto py-8 px-4 md:px-6 flex justify-center items-center min-h-[calc(100vh-10rem)]">
+      <div className="container mx-auto p-6 lg:p-8 flex justify-center items-center min-h-[calc(100vh-10rem)]">
         <Pill className="h-16 w-16 text-primary animate-spin" />
         <p className="ml-4 text-xl text-muted-foreground">Loading medications...</p>
       </div>
@@ -66,7 +67,7 @@ export default function MedicationsListPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4 md:px-6">
+    <div className="container mx-auto p-6 lg:p-8">
       <Card className="shadow-xl">
         <CardHeader className="border-b">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -88,11 +89,11 @@ export default function MedicationsListPage() {
           <div className="mb-6 flex flex-col sm:flex-row items-center gap-4">
             <div className="relative w-full sm:max-w-xs">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input 
-                placeholder="Search medications..." 
+              <Input
+                placeholder="Search medications..."
                 className="pl-10"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)} 
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
             {/* Future filter button */}
@@ -135,7 +136,7 @@ export default function MedicationsListPage() {
                               Edit (Not implemented)
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem 
+                            <DropdownMenuItem
                               onClick={() => handleDeleteMedication(med.id)}
                               className="text-destructive focus:text-destructive focus:bg-destructive/10"
                             >

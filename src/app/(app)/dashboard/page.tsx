@@ -41,6 +41,7 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
+    setIsLoadingUpcoming(true);
     const todayDateString = new Date().toISOString().split('T')[0];
     const calculatedUpcoming = medications
       .flatMap(med => med.times.map(time => ({ ...med, scheduledTime: time })))
@@ -66,7 +67,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="container mx-auto py-8 px-4 md:px-6">
+    <div className="container mx-auto p-6 lg:p-8">
       <Card className="mb-8 shadow-lg bg-gradient-to-r from-primary/10 to-accent/10 border-primary/30">
         <CardHeader>
           <CardTitle className="text-3xl font-headline text-primary">Welcome Back!</CardTitle>
@@ -100,8 +101,6 @@ export default function DashboardPage() {
                 <ul className="space-y-4">
                   {upcomingMedications.map((med) => {
                     const MedIcon = med.icon || Clock;
-                    // Note: isTaken check logic might need to be re-evaluated if it relies on `med.adherence` directly updated by `handleTakeMedication`
-                    // For this refactor, we assume `med.adherence` reflects the current state correctly after `handleTakeMedication` updates `medications`
                     const isTakenToday = med.adherence.find(log => log.date === new Date().toISOString().split('T')[0] && log.time === med.scheduledTime && log.taken);
 
                     return (
@@ -198,4 +197,3 @@ function StatCard({ icon: Icon, title, value, color }: StatCardProps) {
     </div>
   );
 }
-

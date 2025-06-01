@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +11,7 @@ import { Separator } from "@/components/ui/separator";
 
 export default function SettingsPage() {
   return (
-    <div className="container mx-auto py-8 px-4 md:px-6 space-y-8">
+    <div className="container mx-auto p-6 lg:p-8 space-y-8">
       <Card className="shadow-xl">
         <CardHeader>
           <div className="flex items-center gap-3 mb-1">
@@ -71,7 +72,7 @@ export default function SettingsPage() {
               <Button className="w-full mt-4">Save Notification Preferences</Button>
             </CardContent>
           </Card>
-          
+
           <Card className="shadow-md mt-8">
             <CardHeader>
                 <CardTitle className="text-xl font-headline flex items-center gap-2"><Palette className="w-5 h-5 text-primary"/> Appearance</CardTitle>
@@ -82,7 +83,7 @@ export default function SettingsPage() {
                     Dark Mode
                     <p className="text-xs text-muted-foreground">Toggle between light and dark themes.</p>
                     </Label>
-                    <Switch id="darkMode" disabled /> 
+                    <Switch id="darkMode" disabled />
                     {/* Dark mode toggle would need actual theme switching logic */}
                 </div>
                 <p className="text-sm text-muted-foreground">More appearance settings coming soon!</p>
@@ -90,7 +91,7 @@ export default function SettingsPage() {
           </Card>
         </div>
       </div>
-      
+
       <Separator />
 
       <Card className="shadow-md border-destructive/50">

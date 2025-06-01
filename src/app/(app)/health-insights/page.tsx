@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -34,7 +35,7 @@ export default function HealthInsightsPage() {
   
   if (isLoading) {
      return (
-      <div className="container mx-auto py-8 px-4 md:px-6 flex justify-center items-center min-h-[calc(100vh-10rem)]">
+      <div className="container mx-auto p-6 lg:p-8 flex justify-center items-center min-h-[calc(100vh-10rem)]">
         <Lightbulb className="h-16 w-16 text-primary animate-pulse" />
         <p className="ml-4 text-xl text-muted-foreground">Loading health insights...</p>
       </div>
@@ -43,7 +44,7 @@ export default function HealthInsightsPage() {
 
 
   return (
-    <div className="container mx-auto py-8 px-4 md:px-6 space-y-8">
+    <div className="container mx-auto p-6 lg:p-8 space-y-8">
       <Card className="shadow-xl">
         <CardHeader>
           <div className="flex items-center gap-3 mb-1">

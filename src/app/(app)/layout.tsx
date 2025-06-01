@@ -29,7 +29,7 @@ import {
   SidebarMenuSub,
   SidebarMenuSubItem,
   SidebarMenuSubButton,
-  SidebarTrigger, 
+  SidebarTrigger,
   SidebarGroup,
   SidebarGroupLabel,
 } from '@/components/ui/sidebar';
@@ -47,9 +47,9 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { 
-    href: '/medications', 
-    label: 'Medications', 
+  {
+    href: '/medications',
+    label: 'Medications',
     icon: Pill,
     subItems: [
       { href: '/medications/list', label: 'View All', icon: Pill },
@@ -173,7 +173,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         </Sidebar>
         <div className="flex flex-1 flex-col sm:pl-[var(--sidebar-width-icon)] group-data-[state=expanded]:sm:pl-[var(--sidebar-width)] transition-[padding-left] duration-200 ease-linear">
            <AppHeader />
-           <main className="flex-1 p-4 md:p-6 overflow-auto">
+           <main className="flex-1 overflow-auto w-full">
              {children}
            </main>
         </div>

@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -64,20 +65,20 @@ export default function StatsPage() {
 
   if (isLoading) {
      return (
-      <div className="container mx-auto py-8 px-4 md:px-6 flex justify-center items-center min-h-[calc(100vh-10rem)]">
+      <div className="container mx-auto p-6 lg:p-8 flex justify-center items-center min-h-[calc(100vh-10rem)]">
         <BarChart3 className="h-16 w-16 text-primary animate-pulse" />
         <p className="ml-4 text-xl text-muted-foreground">Loading adherence statistics...</p>
       </div>
     );
   }
-  
+
   // Check if there's enough data for charts
   const hasWeeklyData = weeklyAdherenceData && weeklyAdherenceData.length > 0;
   const hasMonthlyData = monthlyAdherenceData && monthlyAdherenceData.length > 0;
 
 
   return (
-    <div className="container mx-auto py-8 px-4 md:px-6 space-y-8">
+    <div className="container mx-auto p-6 lg:p-8 space-y-8">
       <Card className="shadow-xl">
         <CardHeader>
           <div className="flex items-center gap-3 mb-1">
@@ -108,7 +109,7 @@ export default function StatsPage() {
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
                   <XAxis dataKey="day" tickLine={false} axisLine={false} />
                   <YAxis allowDecimals={false} tickLine={false} axisLine={false} />
-                  <RechartsTooltip 
+                  <RechartsTooltip
                     content={<ChartTooltipContent />}
                     cursor={{ fill: 'hsl(var(--accent) / 0.2)' }}
                   />
@@ -137,7 +138,7 @@ export default function StatsPage() {
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
                   <XAxis dataKey="month" tickLine={false} axisLine={false} />
                   <YAxis domain={[0, 100]} unit="%" tickLine={false} axisLine={false}/>
-                  <RechartsTooltip 
+                  <RechartsTooltip
                     content={<ChartTooltipContent indicator="dot" />}
                     cursor={{ fill: 'hsl(var(--accent) / 0.2)' }}
                   />
