@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Medication, UserStats } from "@/lib/types";
-import { Bell, CalendarDays, CheckCircle, Clock, PlusCircle, TrendingUp, Zap, Pill, Award, Lightbulb } from "lucide-react";
+import { Bell, CalendarDays, CheckCircle, Clock, PlusCircle, TrendingUp, Zap, Pill, Award, Lightbulb, Loader2 } from "lucide-react";
 import Link from "next/link";
 import Image from 'next/image';
 
@@ -24,10 +24,14 @@ const initialUserStats: UserStats = {
   overallAdherence: 88,
 };
 
+type UpcomingMedication = Medication & { scheduledTime: string };
+
 export default function DashboardPage() {
   const [medications, setMedications] = useState<Medication[]>(initialMedications);
   const [userStats, setUserStats] = useState<UserStats>(initialUserStats);
   const [currentTime, setCurrentTime] = useState<string>('');
+  const [upcomingMedications, setUpcomingMedications] = useState<UpcomingMedication[]>([]);
+  const [isLoadingUpcoming, setIsLoadingUpcoming] = useState(true);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -35,6 +39,17 @@ export default function DashboardPage() {
     }, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    const todayDateString = new Date().toISOString().split('T')[0];
+    const calculatedUpcoming = medications
+      .flatMap(med => med.times.map(time => ({ ...med, scheduledTime: time })))
+      .filter(med => !med.adherence.find(log => log.date === todayDateString && log.time === med.scheduledTime && log.taken))
+      .sort((a, b) => a.scheduledTime.localeCompare(b.scheduledTime));
+    
+    setUpcomingMedications(calculatedUpcoming);
+    setIsLoadingUpcoming(false);
+  }, [medications]);
   
   const handleTakeMedication = (medId: string, time: string) => {
     setMedications(prevMeds => 
@@ -49,11 +64,6 @@ export default function DashboardPage() {
       overallAdherence: Math.min(100, prevStats.overallAdherence + 2) // Simplified
     }));
   };
-
-  const upcomingMedications = medications
-    .flatMap(med => med.times.map(time => ({ ...med, scheduledTime: time })))
-    .filter(med => !med.adherence.find(log => log.date === new Date().toISOString().split('T')[0] && log.time === med.scheduledTime && log.taken))
-    .sort((a, b) => a.scheduledTime.localeCompare(b.scheduledTime));
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6">
@@ -81,22 +91,30 @@ export default function DashboardPage() {
               </Link>
             </CardHeader>
             <CardContent>
-              {upcomingMedications.length > 0 ? (
+              {isLoadingUpcoming ? (
+                <div className="flex justify-center items-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <p className="ml-2 text-muted-foreground">Loading medications...</p>
+                </div>
+              ) : upcomingMedications.length > 0 ? (
                 <ul className="space-y-4">
                   {upcomingMedications.map((med) => {
                     const MedIcon = med.icon || Clock;
-                    const isTaken = med.adherence.find(log => log.date === new Date().toISOString().split('T')[0] && log.time === med.scheduledTime && log.taken);
+                    // Note: isTaken check logic might need to be re-evaluated if it relies on `med.adherence` directly updated by `handleTakeMedication`
+                    // For this refactor, we assume `med.adherence` reflects the current state correctly after `handleTakeMedication` updates `medications`
+                    const isTakenToday = med.adherence.find(log => log.date === new Date().toISOString().split('T')[0] && log.time === med.scheduledTime && log.taken);
+
                     return (
                     <li key={`${med.id}-${med.scheduledTime}`} className="flex items-center justify-between p-4 rounded-lg border bg-card hover:shadow-md transition-shadow">
                       <div className="flex items-center gap-4">
-                        <MedIcon className={`h-8 w-8 ${isTaken ? 'text-green-500' : 'text-primary'}`} />
+                        <MedIcon className={`h-8 w-8 ${isTakenToday ? 'text-green-500' : 'text-primary'}`} />
                         <div>
                           <h3 className="font-semibold text-lg">{med.name}</h3>
                           <p className="text-sm text-muted-foreground">{med.dosage} - {med.scheduledTime}</p>
                           {med.instructions && <p className="text-xs text-muted-foreground/80">{med.instructions}</p>}
                         </div>
                       </div>
-                      {!isTaken ? (
+                      {!isTakenToday ? (
                         <Button onClick={() => handleTakeMedication(med.id, med.scheduledTime)} size="sm">
                           <CheckCircle className="mr-2 h-4 w-4" /> Mark as Taken
                         </Button>
@@ -180,3 +198,4 @@ function StatCard({ icon: Icon, title, value, color }: StatCardProps) {
     </div>
   );
 }
+
