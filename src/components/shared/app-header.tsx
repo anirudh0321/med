@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { Pill, UserCircle, Bell, Settings, LogOut } from 'lucide-react';
+import { Pill, UserCircle, Bell, Settings, LogOut, Inbox } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -28,6 +28,7 @@ export function AppHeader() {
       // Clear local storage on logout
       localStorage.removeItem('pillPalUserStats');
       localStorage.removeItem('pillPalMedications');
+      localStorage.removeItem('pillPalMedicationRemindersEnabled');
       router.push('/'); // Redirect to login page
        toast({
         title: "Logged Out",
@@ -59,9 +60,31 @@ export function AppHeader() {
       </div>
 
       <div className="flex items-center gap-3 md:gap-4">
-        <Button variant="ghost" size="icon" aria-label="Notifications">
-          <Bell className="h-5 w-5" />
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" aria-label="Notifications">
+              <Bell className="h-5 w-5" />
+              <span className="sr-only">Notifications</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-80">
+            <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <div className="p-4 text-center text-sm text-muted-foreground">
+              <Inbox className="mx-auto h-10 w-10 opacity-50 mb-2" />
+              <p>No new notifications yet.</p>
+              <p className="text-xs">Check back later!</p>
+            </div>
+            {/* Example of a notification item - can be used when actual notifications are implemented
+            <DropdownMenuItem className="flex flex-col items-start gap-1">
+              <p className="font-medium">Medication Reminder</p>
+              <p className="text-xs text-muted-foreground">Time to take your Amoxicillin (10:00 AM).</p>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            */}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="rounded-full">
@@ -73,9 +96,9 @@ export function AppHeader() {
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href="/settings/profile"> {/* Assuming settings page has a profile section */}
+              <Link href="/settings"> {/* Updated to point to the main settings page */}
                 <UserCircle className="mr-2 h-4 w-4" />
-                <span>Profile</span>
+                <span>Profile & Settings</span>
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
