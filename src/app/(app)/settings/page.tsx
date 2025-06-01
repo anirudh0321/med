@@ -193,7 +193,13 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 rounded-md border border-destructive/30 bg-destructive/5">
-            <Image src="https://placehold.co/150x150.png" alt="Stop sign illustration" width={100} height={100} className="rounded-lg mb-4 sm:mb-0 sm:mr-6 hidden sm:block" data-ai-hint="stop sign" />
+            <Image 
+                src="https://6000-firebase-studio-1748787162267.cluster-73qgvk7hjjadkrjeyexca5ivva.cloudworkstations.dev/_next/static/media/fc67ac1800000000.png" 
+                alt="Prohibited symbol" 
+                width={300} 
+                height={200} 
+                className="rounded-lg mb-4 sm:mb-0 sm:mr-6 hidden sm:block max-w-[150px] sm:max-w-[200px] md:max-w-[300px]" 
+                data-ai-hint="prohibited symbol" />
             <div className="flex-grow">
               <h4 className="font-semibold text-lg">Delete Account</h4>
               <p className="text-sm text-muted-foreground">Permanently delete your account and all associated data. This action cannot be undone.</p>
@@ -206,4 +212,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-
