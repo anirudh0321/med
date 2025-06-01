@@ -16,7 +16,7 @@ const defaultInitialUserStats: UserStats = {
   points: 0,
   currentStreak: 0,
   longestStreak: 0,
-  overallAdherence: 0, // This should ideally be calculated based on adherence logs
+  overallAdherence: 0,
   lastStreakIncrementDate: undefined,
 };
 
@@ -29,12 +29,10 @@ const MAX_IN_APP_NOTIFICATIONS = 10;
 // Helper function to check if the current date is consecutive to the last recorded streak date
 const isConsecutiveDay = (lastDateStr: string | undefined, currentDateStr: string): boolean => {
   if (!lastDateStr) {
-    // If there's no last date, it's the start of a new streak (of 1 day), so not "consecutive" in terms of extending an old streak.
     return false; 
   }
   try {
     const lastDate = new Date(lastDateStr);
-    // Setting hours to 0 for both dates ensures we compare just the date part, local timezone.
     lastDate.setHours(0, 0, 0, 0);
 
     const expectedContinuationDate = new Date(lastDate);
@@ -46,9 +44,76 @@ const isConsecutiveDay = (lastDateStr: string | undefined, currentDateStr: strin
     return expectedContinuationDate.getTime() === currentDate.getTime();
   } catch (e) {
     console.error("Error in isConsecutiveDay parsing dates:", e);
-    // If dates are invalid, treat as not consecutive to be safe.
     return false; 
   }
+};
+
+const calculateOverallAdherence = (medications: Medication[]): number => {
+  let totalScheduledDoses = 0;
+  let totalTakenDoses = 0;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  medications.forEach(med => {
+    if (med.frequency === 'as_needed' || !med.startDate) {
+      return; 
+    }
+
+    const medStartDate = new Date(med.startDate);
+    medStartDate.setHours(0, 0, 0, 0);
+
+    if (medStartDate > today) { // Medication hasn't started yet
+        return;
+    }
+
+    let loopEndDate = today;
+    if (med.endDate) {
+      const medEndDate = new Date(med.endDate);
+      medEndDate.setHours(0, 0, 0, 0);
+      if (medEndDate < today) {
+        loopEndDate = medEndDate;
+      }
+    }
+    
+    // Ensure loopEndDate is not before medStartDate if med.endDate was before med.startDate (data integrity)
+    if (loopEndDate < medStartDate) {
+        loopEndDate = new Date(medStartDate); // Effectively iterates for at least one day if start is today/past
+    }
+
+
+    for (let d = new Date(medStartDate); d <= loopEndDate; d.setDate(d.getDate() + 1)) {
+      let dailyScheduledDoses = 0;
+      if (med.frequency === 'every_other_day') {
+        const diffTime = Math.abs(d.getTime() - medStartDate.getTime());
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        if (diffDays % 2 === 0) { 
+          dailyScheduledDoses = med.times.length;
+        }
+      } else {
+        dailyScheduledDoses = med.times.length;
+      }
+      totalScheduledDoses += dailyScheduledDoses;
+    }
+
+    med.adherence.forEach(log => {
+      if (log.taken) {
+        const logDate = new Date(log.date);
+        logDate.setHours(0,0,0,0);
+        // Only count doses taken on or before today and on or after start date.
+        // And not after a potential end date that has passed.
+        if (logDate <= loopEndDate && logDate >= medStartDate) {
+            totalTakenDoses += 1;
+        }
+      }
+    });
+  });
+
+  if (totalScheduledDoses === 0) {
+    return 0; 
+  }
+
+  const adherence = (totalTakenDoses / totalScheduledDoses) * 100;
+  return Math.round(adherence > 100 ? 100 : adherence); // Cap at 100% and round
 };
 
 
@@ -68,44 +133,46 @@ export default function DashboardPage() {
   useEffect(() => {
     if (isClient) {
       setIsLoadingData(true);
+      let loadedMedications: Medication[] = defaultInitialMedications;
       const storedMedicationsString = localStorage.getItem('pillPalMedications');
       if (storedMedicationsString) {
         try {
-          setMedications(JSON.parse(storedMedicationsString));
+          const parsed = JSON.parse(storedMedicationsString);
+          loadedMedications = Array.isArray(parsed) ? parsed : defaultInitialMedications;
         } catch (e) {
           console.error("Error parsing medications from localStorage", e);
-          setMedications(defaultInitialMedications);
+          loadedMedications = defaultInitialMedications;
           localStorage.setItem('pillPalMedications', JSON.stringify(defaultInitialMedications.map(m => {
-            const { icon, ...rest } = m;
-            return rest;
+            const { icon, ...rest } = m; return rest;
           })));
         }
       } else {
-        setMedications(defaultInitialMedications);
-        localStorage.setItem('pillPalMedications', JSON.stringify(defaultInitialMedications.map(m => {
-          const { icon, ...rest } = m;
-          return rest;
-        })));
+         localStorage.setItem('pillPalMedications', JSON.stringify(defaultInitialMedications.map(m => {
+            const { icon, ...rest } = m; return rest;
+          })));
       }
+      setMedications(loadedMedications);
 
+      let initialUserStats = defaultInitialUserStats;
       const storedUserStatsString = localStorage.getItem('pillPalUserStats');
       if (storedUserStatsString) {
         try {
           const parsedStats = JSON.parse(storedUserStatsString);
-          // Ensure new fields have default values if loading older data
-          setUserStats({
-            ...defaultInitialUserStats, // provides defaults for new fields
-            ...parsedStats // overrides with stored values
-          });
+          initialUserStats = { ...defaultInitialUserStats, ...parsedStats };
         } catch (e) {
           console.error("Error parsing user stats from localStorage", e);
-          setUserStats(defaultInitialUserStats);
           localStorage.setItem('pillPalUserStats', JSON.stringify(defaultInitialUserStats));
         }
       } else {
-        setUserStats(defaultInitialUserStats);
-        localStorage.setItem('pillPalUserStats', JSON.stringify(defaultInitialUserStats));
+         localStorage.setItem('pillPalUserStats', JSON.stringify(defaultInitialUserStats));
       }
+      
+      const currentAdherence = calculateOverallAdherence(loadedMedications);
+      setUserStats({
+        ...initialUserStats,
+        overallAdherence: currentAdherence
+      });
+
       setIsLoadingData(false);
     }
   }, [isClient]);
@@ -169,11 +236,13 @@ export default function DashboardPage() {
   }, [medications, isLoadingData, isClient]);
   
   const handleTakeMedication = (medId: string, time: string) => {
-    setMedications(prevMeds => 
-      prevMeds.map(med => 
+    let updatedMedicationsList: Medication[] = [];
+    setMedications(prevMeds => {
+      updatedMedicationsList = prevMeds.map(med => 
         med.id === medId ? { ...med, adherence: [...med.adherence, {date: new Date().toISOString().split('T')[0], time, taken: true}], icon: CheckCircle } : med
-      )
-    );
+      );
+      return updatedMedicationsList;
+    });
 
     setUserStats(prevStats => {
       const todayDateString = new Date().toISOString().split('T')[0];
@@ -181,25 +250,18 @@ export default function DashboardPage() {
       let newLastStreakIncrementDate = prevStats.lastStreakIncrementDate;
 
       if (prevStats.lastStreakIncrementDate === todayDateString) {
-        // Streak has already been incremented today, or it's the first med taken today but streak was already handled.
-        // No change to streak variables from what they were at the start of this update.
+        // Streak already handled for today
       } else {
-        // This is the first medication taken today that affects the streak,
-        // or the streak was broken.
         if (isConsecutiveDay(prevStats.lastStreakIncrementDate, todayDateString)) {
           newCurrentStreak = (prevStats.currentStreak || 0) + 1;
         } else {
-          // Streak broken or first time any medication is taken (for streak purposes)
           newCurrentStreak = 1;
         }
         newLastStreakIncrementDate = todayDateString;
       }
 
       const newLongestStreak = Math.max(prevStats.longestStreak || 0, newCurrentStreak);
-      
-      // Overall adherence should be recalculated based on all medication logs,
-      // not just incremented like this. This is a placeholder.
-      const currentOverallAdherence = prevStats.overallAdherence; 
+      const newOverallAdherence = calculateOverallAdherence(updatedMedicationsList);
 
       return {
         ...prevStats,
@@ -207,7 +269,7 @@ export default function DashboardPage() {
         currentStreak: newCurrentStreak,
         longestStreak: newLongestStreak,
         lastStreakIncrementDate: newLastStreakIncrementDate,
-        overallAdherence: currentOverallAdherence, 
+        overallAdherence: newOverallAdherence, 
       };
     });
   };
@@ -216,7 +278,7 @@ export default function DashboardPage() {
     if (!isClient) return;
     const todayDateString = new Date().toISOString().split('T')[0];
     const newNotification: InAppNotification = {
-      id: `${med.id}-${med.scheduledTime}-${todayDateString}-${Date.now()}`, // Ensure unique ID
+      id: `${med.id}-${med.scheduledTime}-${todayDateString}-${Date.now()}`,
       title: 'Medication Reminder',
       body: `Time to take your ${med.name} (${med.dosage}) at ${med.scheduledTime}.`,
       timestamp: Date.now(),
@@ -231,10 +293,9 @@ export default function DashboardPage() {
       if (storedNotificationsString) {
         currentNotifications = JSON.parse(storedNotificationsString);
       }
-      currentNotifications.unshift(newNotification); // Add to the beginning
+      currentNotifications.unshift(newNotification); 
       const trimmedNotifications = currentNotifications.slice(0, MAX_IN_APP_NOTIFICATIONS);
       localStorage.setItem(LOCAL_STORAGE_IN_APP_NOTIFICATIONS_KEY, JSON.stringify(trimmedNotifications));
-      // Dispatch a custom event to notify the header
       window.dispatchEvent(new CustomEvent('pillPalInAppNotificationUpdate'));
     } catch (error) {
       console.error("Error saving in-app notification:", error);
@@ -379,7 +440,7 @@ export default function DashboardPage() {
             <CardContent>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span>Daily Goal</span>
+                  <span>Overall Adherence</span>
                   <span>{userStats.overallAdherence || 0}%</span>
                 </div>
                 <Progress value={userStats.overallAdherence || 0} aria-label={`${userStats.overallAdherence || 0}% adherence`} />
