@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Medication, UserStats } from "@/lib/types";
+import { Medication, UserStats, InAppNotification } from "@/lib/types";
 import { Bell, CalendarDays, CheckCircle, Clock, PlusCircle, TrendingUp, Zap, Pill, Award, Lightbulb, Loader2 } from "lucide-react";
 import Link from "next/link";
 import Image from 'next/image';
@@ -22,6 +22,9 @@ const defaultInitialUserStats: UserStats = {
 type UpcomingMedication = Medication & { scheduledTime: string };
 
 const LOCAL_STORAGE_MED_REMINDERS_KEY = 'pillPalMedicationRemindersEnabled';
+const LOCAL_STORAGE_IN_APP_NOTIFICATIONS_KEY = 'pillPalInAppNotifications';
+const MAX_IN_APP_NOTIFICATIONS = 10;
+
 
 export default function DashboardPage() {
   const [isClient, setIsClient] = useState(false);
@@ -30,7 +33,7 @@ export default function DashboardPage() {
   const [currentTime, setCurrentTime] = useState<string>('');
   const [upcomingMedications, setUpcomingMedications] = useState<UpcomingMedication[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
-  const [shownNotificationKeys, setShownNotificationKeys] = useState<string[]>([]);
+  const [shownBrowserNotificationKeys, setShownBrowserNotificationKeys] = useState<string[]>([]);
 
   useEffect(() => {
     setIsClient(true);
@@ -148,6 +151,35 @@ export default function DashboardPage() {
     }));
   };
 
+  const addInAppNotification = useCallback((med: UpcomingMedication) => {
+    if (!isClient) return;
+    const todayDateString = new Date().toISOString().split('T')[0];
+    const newNotification: InAppNotification = {
+      id: `${med.id}-${med.scheduledTime}-${todayDateString}-${Date.now()}`, // Ensure unique ID
+      title: 'Medication Reminder',
+      body: `Time to take your ${med.name} (${med.dosage}) at ${med.scheduledTime}.`,
+      timestamp: Date.now(),
+      isRead: false,
+      medicationName: med.name,
+      scheduledTime: med.scheduledTime,
+    };
+
+    try {
+      const storedNotificationsString = localStorage.getItem(LOCAL_STORAGE_IN_APP_NOTIFICATIONS_KEY);
+      let currentNotifications: InAppNotification[] = [];
+      if (storedNotificationsString) {
+        currentNotifications = JSON.parse(storedNotificationsString);
+      }
+      currentNotifications.unshift(newNotification); // Add to the beginning
+      const trimmedNotifications = currentNotifications.slice(0, MAX_IN_APP_NOTIFICATIONS);
+      localStorage.setItem(LOCAL_STORAGE_IN_APP_NOTIFICATIONS_KEY, JSON.stringify(trimmedNotifications));
+      // Dispatch a custom event to notify the header
+      window.dispatchEvent(new CustomEvent('pillPalInAppNotificationUpdate'));
+    } catch (error) {
+      console.error("Error saving in-app notification:", error);
+    }
+  }, [isClient]);
+
   const showBrowserNotification = useCallback(async (med: UpcomingMedication) => {
     if (!('Notification' in window)) {
       console.log("This browser does not support desktop notification");
@@ -157,17 +189,18 @@ export default function DashboardPage() {
     if (Notification.permission === 'granted') {
       new Notification('Pill Pal Reminder', {
         body: `Time to take your ${med.name} (${med.dosage}) at ${med.scheduledTime}`,
-        // icon: '/favicon.ico' // Optional: if you have a favicon in public folder
       });
+      addInAppNotification(med);
     } else if (Notification.permission !== 'denied') {
       const permission = await Notification.requestPermission();
       if (permission === 'granted') {
         new Notification('Pill Pal Reminder', {
           body: `Time to take your ${med.name} (${med.dosage}) at ${med.scheduledTime}`,
         });
+        addInAppNotification(med);
       }
     }
-  }, []); // Empty dependency array, this function is stable
+  }, [addInAppNotification]); 
 
   useEffect(() => {
     if (!isClient || isLoadingData || !currentTime) return;
@@ -180,7 +213,7 @@ export default function DashboardPage() {
       }
     } catch (error) {
         console.error("Error parsing remindersEnabled from localStorage:", error);
-        remindersEnabled = true; // Default to true if parsing fails or not set, can be changed
+        remindersEnabled = true; 
     }
 
     if (!remindersEnabled) return;
@@ -188,15 +221,15 @@ export default function DashboardPage() {
     upcomingMedications.forEach(med => {
       if (med.scheduledTime === currentTime) {
         const todayDateString = new Date().toISOString().split('T')[0];
-        const notificationKey = `${med.id}-${med.scheduledTime}-${todayDateString}`;
-        if (!shownNotificationKeys.includes(notificationKey)) {
+        const browserNotificationKey = `${med.id}-${med.scheduledTime}-${todayDateString}`;
+        if (!shownBrowserNotificationKeys.includes(browserNotificationKey)) {
           showBrowserNotification(med);
-          setShownNotificationKeys(prevKeys => [...prevKeys, notificationKey]);
+          setShownBrowserNotificationKeys(prevKeys => [...prevKeys, browserNotificationKey]);
         }
       }
     });
 
-  }, [currentTime, upcomingMedications, isClient, isLoadingData, shownNotificationKeys, showBrowserNotification]);
+  }, [currentTime, upcomingMedications, isClient, isLoadingData, shownBrowserNotificationKeys, showBrowserNotification]);
 
 
   if (isLoadingData && isClient) {

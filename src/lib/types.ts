@@ -35,4 +35,13 @@ export interface HealthInsight {
   type: 'ai_safety' | 'general_tip';
 }
 
+export interface InAppNotification {
+  id: string; // Unique identifier for the notification, e.g., `${medicationId}-${scheduledTime}-${date}`
+  title: string;
+  body: string;
+  timestamp: number; // Unix timestamp (ms) when the notification was generated
+  isRead: boolean;
+  medicationName?: string; // Optional: for quick reference
+  scheduledTime?: string; // Optional: for quick reference
+}
     
