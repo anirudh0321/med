@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from '@/hooks/use-toast';
+import Image from 'next/image';
 
 const LOCAL_STORAGE_MED_REMINDERS_KEY = 'pillPalMedicationRemindersEnabled';
 
@@ -90,7 +91,7 @@ export default function SettingsPage() {
             <SettingsIcon className="h-7 w-7 sm:h-8 sm:w-8 text-primary" />
             <CardTitle className="text-2xl sm:text-3xl font-headline">Settings</CardTitle>
           </div>
-          <CardDescription className="text-base sm:text-lg">Manage your account preferences and application settings.</CardDescription>
+          <CardDescription className="text-sm sm:text-base">Manage your account preferences and application settings.</CardDescription>
         </CardHeader>
       </Card>
 
@@ -98,7 +99,7 @@ export default function SettingsPage() {
         <div className="md:col-span-1">
           <Card className="shadow-md">
             <CardHeader>
-              <CardTitle className="text-xl font-headline flex items-center gap-2"><UserCircle className="w-5 h-5 text-primary"/> Profile Settings</CardTitle>
+              <CardTitle className="text-xl sm:text-2xl font-headline flex items-center gap-2"><UserCircle className="w-5 h-5 text-primary"/> Profile Settings</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
@@ -117,12 +118,12 @@ export default function SettingsPage() {
         <div className="md:col-span-2">
           <Card className="shadow-md">
             <CardHeader>
-              <CardTitle className="text-xl font-headline flex items-center gap-2"><Bell className="w-5 h-5 text-primary"/> Notification Preferences</CardTitle>
+              <CardTitle className="text-xl sm:text-2xl font-headline flex items-center gap-2"><Bell className="w-5 h-5 text-primary"/> Notification Preferences</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0 p-3 rounded-md border hover:bg-muted/50">
                 <div className="flex-grow">
-                  <Label htmlFor="medicationReminders" className="font-normal cursor-pointer text-base">Medication Reminders</Label>
+                  <Label htmlFor="medicationReminders" className="font-normal cursor-pointer text-base sm:text-lg">Medication Reminders</Label>
                   <p className="text-sm text-muted-foreground">Receive push notifications for scheduled medications.</p>
                 </div>
                 <Switch 
@@ -134,7 +135,7 @@ export default function SettingsPage() {
               </div>
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0 p-3 rounded-md border hover:bg-muted/50">
                 <div className="flex-grow">
-                  <Label htmlFor="refillReminders" className="font-normal cursor-pointer text-base">Refill Reminders</Label>
+                  <Label htmlFor="refillReminders" className="font-normal cursor-pointer text-base sm:text-lg">Refill Reminders</Label>
                   <p className="text-sm text-muted-foreground">Get notified when your medication is running low.</p>
                 </div>
                 <Switch 
@@ -146,7 +147,7 @@ export default function SettingsPage() {
               </div>
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0 p-3 rounded-md border hover:bg-muted/50">
                 <div className="flex-grow">
-                  <Label htmlFor="healthTips" className="font-normal cursor-pointer text-base">Health Tips & Insights</Label>
+                  <Label htmlFor="healthTips" className="font-normal cursor-pointer text-base sm:text-lg">Health Tips & Insights</Label>
                   <p className="text-sm text-muted-foreground">Receive occasional health tips and insights.</p>
                 </div>
                 <Switch 
@@ -162,12 +163,12 @@ export default function SettingsPage() {
 
           <Card className="shadow-md mt-8">
             <CardHeader>
-                <CardTitle className="text-xl font-headline flex items-center gap-2"><Palette className="w-5 h-5 text-primary"/> Appearance</CardTitle>
+                <CardTitle className="text-xl sm:text-2xl font-headline flex items-center gap-2"><Palette className="w-5 h-5 text-primary"/> Appearance</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0 p-3 rounded-md border hover:bg-muted/50">
                     <div className="flex-grow">
-                        <Label htmlFor="darkMode" className="font-normal cursor-pointer text-base">Dark Mode</Label>
+                        <Label htmlFor="darkMode" className="font-normal cursor-pointer text-base sm:text-lg">Dark Mode</Label>
                         <p className="text-sm text-muted-foreground">Toggle between light and dark themes.</p>
                     </div>
                     <Switch 
@@ -188,15 +189,16 @@ export default function SettingsPage() {
 
       <Card className="shadow-md border-destructive/50">
         <CardHeader>
-          <CardTitle className="text-xl font-headline text-destructive">Danger Zone</CardTitle>
+          <CardTitle className="text-xl sm:text-2xl font-headline text-destructive">Danger Zone</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 rounded-md border border-destructive/30 bg-destructive/5">
-            <div>
-              <h4 className="font-semibold">Delete Account</h4>
+            <Image src="https://placehold.co/150x150.png" alt="Stop sign illustration" width={100} height={100} className="rounded-lg mb-4 sm:mb-0 sm:mr-6 hidden sm:block" data-ai-hint="stop sign" />
+            <div className="flex-grow">
+              <h4 className="font-semibold text-lg">Delete Account</h4>
               <p className="text-sm text-muted-foreground">Permanently delete your account and all associated data. This action cannot be undone.</p>
             </div>
-            <Button variant="destructive" className="mt-2 sm:mt-0 sm:ml-4 shrink-0 w-full sm:w-auto" onClick={() => toast({variant: "destructive", title: "Action Disabled", description: "Account deletion is not implemented yet."})}>Delete My Account</Button>
+            <Button variant="destructive" className="mt-4 sm:mt-0 sm:ml-4 shrink-0 w-full sm:w-auto" onClick={() => toast({variant: "destructive", title: "Action Disabled", description: "Account deletion is not implemented yet."})}>Delete My Account</Button>
           </div>
         </CardContent>
       </Card>
