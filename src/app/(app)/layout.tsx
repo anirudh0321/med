@@ -2,7 +2,7 @@
 "use client";
 import type { ReactNode } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   Pill,
@@ -12,9 +12,9 @@ import {
   Lightbulb,
   Settings,
   LogOut,
-  Home,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Loader2
 } from 'lucide-react';
 import { AppHeader } from '@/components/shared/app-header';
 import {
@@ -36,7 +36,11 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged, signOut as firebaseSignOut, User } from 'firebase/auth';
+import { useToast } from '@/hooks/use-toast';
+
 
 interface NavItem {
   href: string;
@@ -68,7 +72,46 @@ const settingsNavItems: NavItem[] = [
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { toast } = useToast();
   const [openSubMenus, setOpenSubMenus] = useState<Record<string, boolean>>({});
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [loadingAuth, setLoadingAuth] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setCurrentUser(user);
+      } else {
+        setCurrentUser(null);
+        router.push('/'); // Redirect to login if not authenticated
+      }
+      setLoadingAuth(false);
+    });
+
+    return () => unsubscribe();
+  }, [router]);
+
+  const handleLogout = async () => {
+    try {
+      await firebaseSignOut(auth);
+      // Clear local storage on logout
+      localStorage.removeItem('pillPalUserStats');
+      localStorage.removeItem('pillPalMedications');
+      router.push('/');
+      toast({
+        title: "Logged Out",
+        description: "You have been successfully logged out.",
+      });
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast({
+        variant: "destructive",
+        title: "Logout Failed",
+        description: "Could not log you out. Please try again.",
+      });
+    }
+  };
 
   const toggleSubMenu = (label: string) => {
     setOpenSubMenus(prev => ({ ...prev, [label]: !prev[label] }));
@@ -135,6 +178,21 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     );
   };
 
+  if (loadingAuth) {
+    return (
+      <div className="flex min-h-screen w-full items-center justify-center bg-background">
+        <Loader2 className="h-16 w-16 animate-spin text-primary" />
+        <p className="ml-4 text-lg text-muted-foreground">Authenticating...</p>
+      </div>
+    );
+  }
+  
+  if (!currentUser && !loadingAuth) {
+    // This case should ideally be handled by the redirect in onAuthStateChanged,
+    // but it's a fallback. Return null or a minimal loading/redirecting message.
+    return null; 
+  }
+
 
   return (
     <SidebarProvider defaultOpen>
@@ -153,15 +211,14 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 <SidebarMenu>
                  {settingsNavItems.map(item => renderNavItem(item))}
                  <SidebarMenuItem>
-                    <Link href="/" passHref legacyBehavior>
-                        <SidebarMenuButton
-                            className="text-destructive hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive"
-                            tooltip="Log Out"
-                        >
-                            <LogOut />
-                            <span>Log Out</span>
-                        </SidebarMenuButton>
-                    </Link>
+                    <SidebarMenuButton
+                        onClick={handleLogout}
+                        className="text-destructive hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive"
+                        tooltip="Log Out"
+                    >
+                        <LogOut />
+                        <span>Log Out</span>
+                    </SidebarMenuButton>
                   </SidebarMenuItem>
                 </SidebarMenu>
               </SidebarGroup>
